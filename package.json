@@ -52,13 +52,21 @@
     "npm": ">= 5.4"
   },
   "devDependencies": {
+    "@types/sinon": "^7.0.6",
     "ava": "^1.2.1",
     "babel-preset-env": "^1.7.0",
     "coveralls": "^3.0.2",
     "nyc": "^13.3.0",
+    "sinon": "^7.2.4",
     "ts-node": "^8.0.2",
     "tslint": "^5.12.1",
     "tslint-config-standard": "^8.0.1",
     "typescript": "^3.3.3"
+  },
+  "dependencies": {
+    "@types/ramda": "^0.25.50",
+    "@types/redis": "^2.8.10",
+    "ramda": "^0.26.1",
+    "redis": "^2.8.0"
   }
 }
