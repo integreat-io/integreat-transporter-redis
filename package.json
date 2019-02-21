@@ -1,6 +1,6 @@
 {
   "name": "integreat-adapter-redis",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Redis adapter for Integreat",
   "author": "Kjell-Morten Bratsberg Thorsen <post@kjellmorten.no>",
   "license": "ISC",
