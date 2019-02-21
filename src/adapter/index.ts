@@ -43,7 +43,8 @@ export interface Response {
 export default {
   authentication: null,
 
-  prepareEndpoint: (endpointOptions: EndpointOptions, _serviceOptions?: EndpointOptions) => endpointOptions,
+  prepareEndpoint: (endpointOptions: EndpointOptions, serviceOptions?: EndpointOptions) =>
+    (serviceOptions) ? { ...serviceOptions, ...endpointOptions } : endpointOptions,
 
   connect: async (_serviceOptions: EndpointOptions, _auth: object | null, _connection: object | null) => null,
 
