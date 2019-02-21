@@ -1,0 +1,64 @@
+{
+  "name": "integreat-adapter-redis",
+  "version": "0.1.0",
+  "description": "Redis adapter for Integreat",
+  "author": "Kjell-Morten Bratsberg Thorsen <post@kjellmorten.no>",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "start": "tsc && node dist/index.js",
+    "test": "tsc && nyc --reporter=text-summary ava dist/**/*.test.js",
+    "test:watch": "npm run dev",
+    "test:inspect": "node --inspect node_modules/ava/profile.js",
+    "dev": "ava --watch",
+    "build": "tsc",
+    "prepare": "npm run build",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "nyc:report": "nyc report",
+    "lint": "tslint --project tsconfig.json --config tslint.json"
+  },
+  "ava": {
+    "compileEnhancements": false,
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register/transpile-only"
+    ],
+    "files": [
+      "src/**/*.test.ts"
+    ],
+    "sources": [
+      "src/**/!(*.test).ts"
+    ]
+  },
+  "nyc": {
+    "exclude": [
+      "**/*.test.js",
+      "**/*.test.ts"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/integreat-io/integreat-adapter-redis.git"
+  },
+  "bugs": {
+    "url": "https://github.com/integreat-io/integreat-adapter-redis/issues"
+  },
+  "homepage": "https://github.com/integreat-io/integreat-adapter-redis#readme",
+  "engines": {
+    "node": ">= 8.6",
+    "npm": ">= 5.4"
+  },
+  "devDependencies": {
+    "ava": "^1.2.1",
+    "babel-preset-env": "^1.7.0",
+    "coveralls": "^3.0.2",
+    "nyc": "^13.3.0",
+    "ts-node": "^8.0.2",
+    "tslint": "^5.12.1",
+    "tslint-config-standard": "^8.0.1",
+    "typescript": "^3.3.3"
+  }
+}
