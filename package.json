@@ -8,7 +8,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "start": "tsc && node dist/index.js",
-    "test": "tsc && nyc --reporter=text-summary ava dist/**/*.test.js",
+    "test": "nyc --reporter=text-summary ava",
     "test:watch": "npm run dev",
     "test:inspect": "node --inspect node_modules/ava/profile.js",
     "dev": "ava --watch",
@@ -34,9 +34,13 @@
     ]
   },
   "nyc": {
-    "exclude": [
-      "**/*.test.js",
-      "**/*.test.ts"
+    "extension": [
+      ".ts",
+      ".js"
+    ],
+    "include": [
+      "**/!(*.test).js",
+      "**/!(*.test|*.d).ts"
     ]
   },
   "repository": {
@@ -51,22 +55,22 @@
     "node": ">= 8.6",
     "npm": ">= 5.4"
   },
-  "devDependencies": {
-    "@types/sinon": "^7.0.6",
-    "ava": "^1.2.1",
-    "babel-preset-env": "^1.7.0",
-    "coveralls": "^3.0.2",
-    "nyc": "^13.3.0",
-    "sinon": "^7.2.4",
-    "ts-node": "^8.0.2",
-    "tslint": "^5.12.1",
-    "tslint-config-standard": "^8.0.1",
-    "typescript": "^3.3.3"
-  },
   "dependencies": {
-    "@types/ramda": "^0.25.50",
-    "@types/redis": "^2.8.10",
+    "@types/ramda": "^0.26.9",
+    "@types/redis": "^2.8.13",
     "ramda": "^0.26.1",
     "redis": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/sinon": "^7.0.13",
+    "ava": "^2.1.0",
+    "babel-preset-env": "^1.7.0",
+    "coveralls": "^3.0.4",
+    "nyc": "^14.1.1",
+    "sinon": "^7.3.2",
+    "ts-node": "^8.2.0",
+    "tslint": "^5.17.0",
+    "tslint-config-standard": "^8.0.1",
+    "typescript": "^3.5.2"
   }
 }
