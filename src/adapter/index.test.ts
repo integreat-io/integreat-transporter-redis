@@ -36,7 +36,7 @@ test('should return null as connection', async (t) => {
   t.is(ret, null)
 })
 
-test('should do nothing when callling disconnect', async (t) => {
+test('should do nothing when callling disconnect without connection', async (t) => {
   const ret = await adapter.disconnect(null)
 
   t.is(ret, undefined)

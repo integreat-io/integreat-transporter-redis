@@ -1,10 +1,6 @@
 import { promisify } from 'util'
-import redis = require('redis')
-import { Request, Response, SerializedData, } from '.'
-
-interface Redis {
-  createClient: (options?: { [key: string]: string }) => redis.RedisClient
-}
+import redisLib = require('redis')
+import { Request, Response, SerializedData } from '.'
 
 const createError = (error: Error, message: string) => ({
   status: 'error',
@@ -18,7 +14,7 @@ const noIdError = (hasData: boolean) => (hasData)
 const objectToArray = (data: SerializedData) => Object.keys(data)
   .reduce((arr: string[], key: string) => [ ...arr, key, data[key] ], [])
 
-const sendGet = async (client: redis.RedisClient, hash: string) => {
+const sendGet = async (client: redisLib.RedisClient, hash: string) => {
   const hgetall = promisify(client.hgetall).bind(client)
 
   try {
@@ -31,7 +27,7 @@ const sendGet = async (client: redis.RedisClient, hash: string) => {
   }
 }
 
-const sendSet = async (client: redis.RedisClient, hash: string, data: SerializedData) => {
+const sendSet = async (client: redisLib.RedisClient, hash: string, data: SerializedData) => {
   const hmset = promisify<string, string[], 'OK'>(client.hmset).bind(client)
 
   try {
@@ -47,20 +43,22 @@ const hashFromIdAndPrefix = (id: string, prefix?: string) =>
 
 const isData = (data: any): data is SerializedData => (typeof data === 'object' && data !== null)
 
-const sendData = async (client: redis.RedisClient, hash: string, data?: SerializedData) => {
+const sendData = async (client: redisLib.RedisClient, hash: string, data?: SerializedData) => {
   return (isData(data))
     ? sendSet(client, hash, data)
     : sendGet(client, hash)
 }
 
-const send = (redis: Redis) => async (request: Request): Promise<Response> => {
+const send = async (request: Request, client: redisLib.RedisClient | null): Promise<Response> => {
+  if (!client) {
+    return { status: 'error', error: 'No redis client given to redis adapter\'s send method' }
+  }
   const { endpoint, data, params } = request
   if (!params || !params.id) {
     return noIdError(isData(request.data))
   }
 
   const hash = hashFromIdAndPrefix(params.id, endpoint && endpoint.prefix)
-  const client = redis.createClient(endpoint && endpoint.redis)
 
   return sendData(client, hash, data as SerializedData)
 }

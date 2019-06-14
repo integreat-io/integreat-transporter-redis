@@ -4,7 +4,7 @@ import { Request, Data } from '.'
 const serializeObject = (value: object) => (value instanceof Date)
   ? value.toISOString() : JSON.stringify(value)
 
-const serializeValue = (value: string | number | boolean | object) =>
+const serializeValue = (value?: string | number | boolean | object | null) =>
   (value === null || typeof value === 'undefined')
     ? ''
     : (typeof value === 'object')

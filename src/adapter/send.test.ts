@@ -1,5 +1,6 @@
 import test from 'ava'
 import sinon = require('sinon')
+import redisLib = require('redis')
 
 import send from './send'
 
@@ -19,9 +20,6 @@ test('should GET from redis', async (t) => {
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(null, redisData)
   }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient)
-  }
   const request = {
     action: 'GET',
     endpoint: {
@@ -37,11 +35,9 @@ test('should GET from redis', async (t) => {
     data: redisData
   }
 
-  const ret = await send(redis)(request)
+  const ret = await send(request, redisClient as any)
 
   t.deepEqual(ret, expected)
-  t.is(redis.createClient.callCount, 1)
-  t.deepEqual(redis.createClient.args[0][0], redisOptions)
   t.is(redisClient.hgetall.callCount, 1)
   t.deepEqual(redisClient.hgetall.args[0][0], 'meta:entries')
 })
@@ -53,9 +49,6 @@ test('should prepend prefix to redis hash', async (t) => {
   }
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(null, redisData)
-  }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient)
   }
   const request = {
     action: 'GET',
@@ -69,7 +62,7 @@ test('should prepend prefix to redis hash', async (t) => {
     }
   }
 
-  await send(redis)(request)
+  await send(request, redisClient as any)
 
   t.deepEqual(redisClient.hgetall.args[0][0], 'store:meta:entries')
 })
@@ -78,9 +71,6 @@ test('should return not found for GET on empty data', async (t) => {
   const redisData = {}
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(null, redisData)
-  }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient)
   }
   const request = {
     action: 'GET',
@@ -97,7 +87,7 @@ test('should return not found for GET on empty data', async (t) => {
     error: 'Could not find hash \'meta:entries\''
   }
 
-  const ret = await send(redis)(request)
+  const ret = await send(request, redisClient as any)
 
   t.deepEqual(ret, expected)
 })
@@ -105,9 +95,6 @@ test('should return not found for GET on empty data', async (t) => {
 test('should return not found for GET with no id', async (t) => {
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(null, null)
-  }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient)
   }
   const request = {
     action: 'GET',
@@ -123,18 +110,14 @@ test('should return not found for GET with no id', async (t) => {
     error: 'Cannot get data with no id'
   }
 
-  const ret = await send(redis)(request)
+  const ret = await send(request, redisClient as any)
 
   t.deepEqual(ret, expected)
-  t.is(redis.createClient.callCount, 0)
 })
 
 test('should SET to redis', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(null, 'OK')
-  }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient)
   }
   const request = {
     action: 'SET',
@@ -156,11 +139,9 @@ test('should SET to redis', async (t) => {
   }
   const expectedArgs = ['title', 'Entry 1', 'description', 'The first entry']
 
-  const ret = await send(redis)(request)
+  const ret = await send(request, redisClient as any)
 
   t.deepEqual(ret, expected)
-  t.is(redis.createClient.callCount, 1)
-  t.deepEqual(redis.createClient.args[0][0], redisOptions)
   t.is(redisClient.hmset.callCount, 1)
   t.deepEqual(redisClient.hmset.args[0][0], 'meta:entries')
   t.deepEqual(redisClient.hmset.args[0][1], expectedArgs)
@@ -169,9 +150,6 @@ test('should SET to redis', async (t) => {
 test('should return error for SET with no id', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(null, 'OK')
-  }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient)
   }
   const request = {
     action: 'SET',
@@ -190,18 +168,14 @@ test('should return error for SET with no id', async (t) => {
     error: 'Cannot set data with no id'
   }
 
-  const ret = await send(redis)(request)
+  const ret = await send(request, redisClient as any)
 
   t.deepEqual(ret, expected)
-  t.is(redis.createClient.callCount, 0)
 })
 
 test('should return error when redis throws on get', async (t) => {
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(new Error('Horror!'), null)
-  }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient)
   }
   const request = {
     action: 'GET',
@@ -218,7 +192,7 @@ test('should return error when redis throws on get', async (t) => {
     error: 'Error from Redis while getting from hash \'meta:entries\'. Horror!'
   }
 
-  const ret = await send(redis)(request)
+  const ret = await send(request, redisClient as any)
 
   t.deepEqual(ret, expected)
 })
@@ -226,9 +200,6 @@ test('should return error when redis throws on get', async (t) => {
 test('should return error when redis throws on set', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(new Error('Horror!'), null)
-  }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient)
   }
   const request = {
     action: 'SET',
@@ -248,7 +219,28 @@ test('should return error when redis throws on set', async (t) => {
     error: 'Error from Redis while setting on hash \'meta:entries\'. Horror!'
   }
 
-  const ret = await send(redis)(request)
+  const ret = await send(request, redisClient as any)
+
+  t.deepEqual(ret, expected)
+})
+
+test('should return error when no redis client', async (t) => {
+  const request = {
+    action: 'GET',
+    endpoint: {
+      redis: redisOptions
+    },
+    params: {
+      type: 'meta',
+      id: 'meta:entries'
+    }
+  }
+  const expected = {
+    status: 'error',
+    error: 'No redis client given to redis adapter\'s send method'
+  }
+
+  const ret = await send(request, null)
 
   t.deepEqual(ret, expected)
 })

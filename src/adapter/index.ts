@@ -1,4 +1,6 @@
 import redis = require('redis')
+import connect from './connect'
+import disconnect from './disconnect'
 import serialize from './serialize'
 import send from './send'
 import normalize from './normalize'
@@ -46,13 +48,13 @@ export default {
   prepareEndpoint: (endpointOptions: EndpointOptions, serviceOptions?: EndpointOptions) =>
     (serviceOptions) ? { ...serviceOptions, ...endpointOptions } : endpointOptions,
 
-  connect: async (_serviceOptions: EndpointOptions, _auth: object | null, _connection: object | null) => null,
+  connect: connect(redis),
 
   serialize,
 
-  send: send(redis),
+  send,
 
   normalize,
 
-  disconnect: async (_connection: {} | null) => { return }
+  disconnect
 }

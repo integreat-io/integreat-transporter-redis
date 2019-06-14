@@ -1,21 +1,22 @@
 import test from 'ava'
 import sinon = require('sinon')
 
-import send from '../adapter/send'
+import connect from '../adapter/connect'
 import resources from '..'
 
 // Tests
 
 test('should set data to redis service', async (t) => {
   const redisClient = {
-    hmset: sinon.stub().yieldsRight(null, 'OK')
+    hmset: sinon.stub().yieldsRight(null, 'OK'),
+    quit: sinon.stub().yieldsRight(null)
   }
   const redis = {
     createClient: sinon.stub().returns(redisClient)
   }
   const adapter = {
     ...resources.adapters.redis,
-    send: send(redis)
+    connect: connect(redis)
   }
   const data = {
     title: 'Entry 1',
@@ -44,8 +45,10 @@ test('should set data to redis service', async (t) => {
   ]
 
   const serializedRequest = await adapter.serialize(request)
-  const response = await adapter.send(serializedRequest)
+  const client = await adapter.connect(request.endpoint, null, null)
+  const response = await adapter.send(serializedRequest, client)
   const ret = await adapter.normalize(response, request)
+  await adapter.disconnect(client)
 
   t.is(ret.status, 'ok')
   t.is(ret.data, null)
