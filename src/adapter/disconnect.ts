@@ -1,8 +1,8 @@
 import { promisify } from 'util'
-import redisLib = require('redis')
+import { Connection } from '.'
 
-export default async function disconnect (client: redisLib.RedisClient | null) {
-  if (client) {
-    await promisify(client.quit).bind(client)()
+export default async function disconnect (connection: Connection | null) {
+  if (connection && connection.status === 'ok' && connection.redisClient) {
+    await promisify(connection.redisClient.quit).bind(connection.redisClient)()
   }
 }

@@ -1,6 +1,5 @@
 import test from 'ava'
 import sinon = require('sinon')
-import redisLib = require('redis')
 
 import send from './send'
 
@@ -9,6 +8,11 @@ import send from './send'
 const redisOptions = {
   uri: 'redis://localhost:6379'
 }
+
+const wrapInConnection = (redisClient: any) => ({
+  status: 'ok',
+  redisClient
+})
 
 // Tests
 
@@ -35,7 +39,7 @@ test('should GET from redis', async (t) => {
     data: redisData
   }
 
-  const ret = await send(request, redisClient as any)
+  const ret = await send(request, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
   t.is(redisClient.hgetall.callCount, 1)
@@ -62,7 +66,7 @@ test('should prepend prefix to redis hash', async (t) => {
     }
   }
 
-  await send(request, redisClient as any)
+  await send(request, wrapInConnection(redisClient))
 
   t.deepEqual(redisClient.hgetall.args[0][0], 'store:meta:entries')
 })
@@ -87,7 +91,7 @@ test('should return not found for GET on empty data', async (t) => {
     error: 'Could not find hash \'meta:entries\''
   }
 
-  const ret = await send(request, redisClient as any)
+  const ret = await send(request, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
 })
@@ -110,7 +114,7 @@ test('should return not found for GET with no id', async (t) => {
     error: 'Cannot get data with no id'
   }
 
-  const ret = await send(request, redisClient as any)
+  const ret = await send(request, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
 })
@@ -139,7 +143,7 @@ test('should SET to redis', async (t) => {
   }
   const expectedArgs = ['title', 'Entry 1', 'description', 'The first entry']
 
-  const ret = await send(request, redisClient as any)
+  const ret = await send(request, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
   t.is(redisClient.hmset.callCount, 1)
@@ -168,7 +172,7 @@ test('should return error for SET with no id', async (t) => {
     error: 'Cannot set data with no id'
   }
 
-  const ret = await send(request, redisClient as any)
+  const ret = await send(request, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
 })
@@ -192,7 +196,7 @@ test('should return error when redis throws on get', async (t) => {
     error: 'Error from Redis while getting from hash \'meta:entries\'. Horror!'
   }
 
-  const ret = await send(request, redisClient as any)
+  const ret = await send(request, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
 })
@@ -219,12 +223,12 @@ test('should return error when redis throws on set', async (t) => {
     error: 'Error from Redis while setting on hash \'meta:entries\'. Horror!'
   }
 
-  const ret = await send(request, redisClient as any)
+  const ret = await send(request, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
 })
 
-test('should return error when no redis client', async (t) => {
+test('should return error when no connection', async (t) => {
   const request = {
     action: 'GET',
     endpoint: {
@@ -241,6 +245,28 @@ test('should return error when no redis client', async (t) => {
   }
 
   const ret = await send(request, null)
+
+  t.deepEqual(ret, expected)
+})
+
+test('should return error when no client', async (t) => {
+  const request = {
+    action: 'GET',
+    endpoint: {
+      redis: redisOptions
+    },
+    params: {
+      type: 'meta',
+      id: 'meta:entries'
+    }
+  }
+  const connection = { status: 'error', error: 'Fail', redisClient: null }
+  const expected = {
+    status: 'error',
+    error: 'No redis client given to redis adapter\'s send method'
+  }
+
+  const ret = await send(request, connection)
 
   t.deepEqual(ret, expected)
 })

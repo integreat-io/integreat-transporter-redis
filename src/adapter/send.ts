@@ -1,6 +1,6 @@
 import { promisify } from 'util'
 import redisLib = require('redis')
-import { Request, Response, SerializedData } from '.'
+import { Request, Response, SerializedData, Connection } from '.'
 
 const createError = (error: Error, message: string) => ({
   status: 'error',
@@ -49,8 +49,8 @@ const sendData = async (client: redisLib.RedisClient, hash: string, data?: Seria
     : sendGet(client, hash)
 }
 
-const send = async (request: Request, client: redisLib.RedisClient | null): Promise<Response> => {
-  if (!client) {
+const send = async (request: Request, connection: Connection | null): Promise<Response> => {
+  if (!connection || connection.status !== 'ok' || !connection.redisClient) {
     return { status: 'error', error: 'No redis client given to redis adapter\'s send method' }
   }
   const { endpoint, data, params } = request
@@ -60,7 +60,7 @@ const send = async (request: Request, client: redisLib.RedisClient | null): Prom
 
   const hash = hashFromIdAndPrefix(params.id, endpoint && endpoint.prefix)
 
-  return sendData(client, hash, data as SerializedData)
+  return sendData(connection.redisClient, hash, data as SerializedData)
 }
 
 export default send

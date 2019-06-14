@@ -29,15 +29,3 @@ test('should merge endpointOptions with serviceOptions', (t) => {
 
   t.deepEqual(ret, expected)
 })
-
-test('should return null as connection', async (t) => {
-  const ret = await adapter.connect({}, {}, null)
-
-  t.is(ret, null)
-})
-
-test('should do nothing when callling disconnect without connection', async (t) => {
-  const ret = await adapter.disconnect(null)
-
-  t.is(ret, undefined)
-})

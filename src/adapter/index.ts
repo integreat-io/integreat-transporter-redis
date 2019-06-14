@@ -42,6 +42,12 @@ export interface Response {
   error?: string
 }
 
+export interface Connection {
+  status: string,
+  error?: string,
+  redisClient: redis.RedisClient | null
+}
+
 export default {
   authentication: null,
 
