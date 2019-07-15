@@ -1,6 +1,6 @@
 {
   "name": "integreat-adapter-redis",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Redis adapter for Integreat",
   "author": "Kjell-Morten Bratsberg Thorsen <post@kjellmorten.no>",
   "license": "ISC",
@@ -8,7 +8,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "start": "tsc && node dist/index.js",
-    "test": "nyc --reporter=text-summary ava",
+    "test": "npm run lint && npm run build && nyc --reporter=text-summary ava ./dist/**/*.test.js",
     "test:watch": "npm run dev",
     "test:inspect": "node --inspect node_modules/ava/profile.js",
     "dev": "ava --watch",
