@@ -19,6 +19,7 @@ test('should set data to redis service', async (t) => {
     connect: connect(redis)
   }
   const data = {
+    id: 'ent1',
     title: 'Entry 1',
     description: 'The first entry',
     author: { id: 'johnf', name: 'John F.' }
@@ -34,7 +35,6 @@ test('should set data to redis service', async (t) => {
     data,
     params: {
       type: 'meta',
-      id: 'meta:entries',
       keys: ['title', 'description', 'author']
     }
   }
@@ -52,6 +52,6 @@ test('should set data to redis service', async (t) => {
 
   t.is(ret.status, 'ok')
   t.is(ret.data, null)
-  t.is(redisClient.hmset.args[0][0], 'store:meta:entries')
+  t.is(redisClient.hmset.args[0][0], 'store:ent1')
   t.deepEqual(redisClient.hmset.args[0][1], expectedData)
 })

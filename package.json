@@ -56,21 +56,20 @@
     "npm": ">= 5.4"
   },
   "dependencies": {
-    "@types/ramda": "^0.26.15",
+    "@types/ramda": "^0.26.22",
     "@types/redis": "^2.8.13",
     "ramda": "^0.26.1",
     "redis": "^2.8.0"
   },
   "devDependencies": {
     "@types/sinon": "^7.0.13",
-    "ava": "^2.2.0",
-    "babel-preset-env": "^1.7.0",
-    "coveralls": "^3.0.5",
+    "ava": "^2.4.0",
+    "coveralls": "^3.0.6",
     "nyc": "^14.1.1",
-    "sinon": "^7.3.2",
-    "ts-node": "^8.3.0",
-    "tslint": "^5.18.0",
+    "sinon": "^7.5.0",
+    "ts-node": "^8.4.1",
+    "tslint": "^5.20.0",
     "tslint-config-standard": "^8.0.1",
-    "typescript": "^3.5.3"
+    "typescript": "^3.6.3"
   }
 }
