@@ -44,6 +44,47 @@ test('should normalize response with data', async (t) => {
   t.deepEqual(ret, expected)
 })
 
+test('should normalize response with data array', async (t) => {
+  const response = {
+    status: 'ok',
+    data: [
+      {
+        id: 'ent1',
+        title: 'Entry 1',
+        updateCount: '3',
+        nil: ''
+      },
+      {
+        id: 'ent2',
+        title: 'Entry 2',
+        updateCount: '18',
+        nil: ''
+      }
+    ]
+  }
+  const expected = {
+    status: 'ok',
+    data: [
+      {
+        id: 'ent1',
+        title: 'Entry 1',
+        updateCount: 3,
+        nil: ''
+      },
+      {
+        id: 'ent2',
+        title: 'Entry 2',
+        updateCount: 18,
+        nil: ''
+      }
+    ]
+  }
+
+  const ret = await normalize(response, request)
+
+  t.deepEqual(ret, expected)
+})
+
 test('should normalize response with no data', async (t) => {
   const response = {
     status: 'ok',

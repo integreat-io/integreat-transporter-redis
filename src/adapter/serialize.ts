@@ -1,3 +1,4 @@
+import mapAny = require('map-any')
 import { map } from 'ramda'
 import { Request, Data } from '.'
 
@@ -13,9 +14,11 @@ const serializeValue = (value?: string | number | boolean | object | null) =>
 
 const isData = (data: any): data is Data => (typeof data === 'object' && data !== null)
 
-export default async function serialize (request: Request) {
+export default async function serialize (request: Request): Promise<Request> {
   return {
     ...request,
-    data: (isData(request.data)) ? map<Data, Data>(serializeValue, request.data) : null
+    data: (isData(request.data))
+      ? mapAny(map<Data, Data>(serializeValue), request.data)
+      : null
   }
 }

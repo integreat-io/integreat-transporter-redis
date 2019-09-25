@@ -39,6 +39,49 @@ test('should serialize request with data', async (t) => {
   t.deepEqual(ret, expected)
 })
 
+test('should serialize request with array of data', async (t) => {
+  const request = {
+    action: 'SET',
+    data: [
+      {
+        id: 'ent1',
+        title: 'Entry 1',
+        updateCount: 3,
+        nil: null
+      },
+      {
+        id: 'ent2',
+        title: 'Entry 2',
+        updateCount: 18,
+        nil: undefined
+      }
+    ],
+    params: { id: 'meta:entries', type: 'meta' }
+  }
+  const expected = {
+    action: 'SET',
+    data: [
+      {
+        id: 'ent1',
+        title: 'Entry 1',
+        updateCount: 3,
+        nil: ''
+      },
+      {
+        id: 'ent2',
+        title: 'Entry 2',
+        updateCount: 18,
+        nil: ''
+      }
+    ],
+    params: { id: 'meta:entries', type: 'meta' }
+  }
+
+  const ret = await serialize(request)
+
+  t.deepEqual(ret, expected)
+})
+
 test('should serialize request with no data', async (t) => {
   const request = {
     action: 'SET',

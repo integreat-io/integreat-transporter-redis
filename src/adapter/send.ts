@@ -1,5 +1,6 @@
 import { promisify } from 'util'
 import redisLib = require('redis')
+import pLimit from 'p-limit'
 import { Request, Response, SerializedData, Connection } from '.'
 
 interface HMSet {
@@ -14,13 +15,9 @@ const createError = (error: Error, message: string) => ({
   error: `${message} ${error.message}`
 })
 
-const noIdError = (hasData: boolean) => (hasData)
-  ? { status: 'error', error: 'Cannot set data with no id' }
-  : { status: 'notfound', error: 'Cannot get data with no id' }
-
 const sendGet = async (client: redisLib.RedisClient, id?: string, prefix?: string) => {
   if (!id) {
-    return noIdError(false)
+    return { status: 'notfound', error: 'Cannot get data with no id' }
   }
   const hash = hashFromIdAndPrefix(id, prefix)
   const hgetall = promisify(client.hgetall).bind(client)
@@ -50,11 +47,20 @@ const setItem = async (hmset: HMSet, item: SerializedData, prefix?: string): Pro
   }
 }
 
-const sendSet = async (client: redisLib.RedisClient, data: SerializedData | SerializedData[], prefix?: string) => {
+const sendSet = async (
+  client: redisLib.RedisClient,
+  data: SerializedData | SerializedData[],
+  prefix?: string,
+  concurrency = 1
+) => {
   const hmset: HMSet = promisify<string, string[], 'OK'>(client.hmset).bind(client)
 
+  // Sets max concurrency on promises called with `limit()`
+  const limit = pLimit(concurrency)
+
   const results = await Promise.all(
-    ([] as SerializedData[]).concat(data).map(item => setItem(hmset, item, prefix))
+    ([] as SerializedData[]).concat(data)
+      .map(item => limit(() => setItem(hmset, item, prefix)))
   )
 
   const errors = results.filter(result => result.status !== 'ok')
@@ -81,9 +87,10 @@ const send = async (request: Request, connection: Connection | null): Promise<Re
   const id = params && params.id
   const prefix = endpoint && endpoint.prefix
   const client = connection.redisClient
+  const concurrency = endpoint && endpoint.concurrency
 
   return (isData(data))
-    ? sendSet(client, data, prefix)
+    ? sendSet(client, data, prefix, concurrency)
     : sendGet(client, id, prefix)
 }
 

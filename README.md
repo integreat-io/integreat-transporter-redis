@@ -42,9 +42,13 @@ Example source configuration:
 {
   id: 'store',
   adapter: 'redis',
-  endpoints: [
-    { options: { redis: { host: 'localhost', port: 6789 } } }
-  ]
+  endpoints: [{
+    options: {
+      prefix: 'store',
+      redis: { host: 'localhost', port: 6789 },
+      concurrency: 5
+    }
+  }]
 }
 ```
 

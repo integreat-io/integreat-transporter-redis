@@ -18,10 +18,11 @@ export interface SerializedData {
 export type RequestData = Data | Data[] | DataProperty | null
 
 export interface EndpointOptions {
-  prefix?: string,
+  prefix?: string
   redis?: {
     [key: string]: string
   }
+  concurrency?: number
 }
 
 export interface Params {

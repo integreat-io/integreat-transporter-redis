@@ -162,7 +162,8 @@ test('should SET several items to redis', async (t) => {
     action: 'SET',
     endpoint: {
       prefix: 'store',
-      redis: redisOptions
+      redis: redisOptions,
+      concurrency: 10
     },
     params: {
       type: 'meta'
@@ -233,7 +234,7 @@ test('should return error when redis throws on set', async (t) => {
       redis: redisOptions
     },
     params: {
-      type: 'meta',
+      type: 'meta'
     },
     data: {
       id: 'ent1',
@@ -261,7 +262,7 @@ test('should return error when redis throws on one of more sets', async (t) => {
       redis: redisOptions
     },
     params: {
-      type: 'meta',
+      type: 'meta'
     },
     data: [
       {
