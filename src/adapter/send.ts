@@ -1,6 +1,7 @@
 import { promisify } from 'util'
 import redisLib = require('redis')
 import pLimit from 'p-limit'
+const debug = require('debug')('great:adapter:redis')
 import { Request, Response, SerializedData, Connection } from '.'
 
 interface HMSet {
@@ -22,12 +23,15 @@ const sendGet = async (client: redisLib.RedisClient, id?: string, prefix?: strin
   const hash = hashFromIdAndPrefix(id, prefix)
   const hgetall = promisify(client.hgetall).bind(client)
 
+  debug('Get from redis id \'%s\', hash \'$s\'.', id, hash)
   try {
     const responseData = await hgetall(hash)
+    debug('Redis get with hash \'%s\' returned %o', hash, responseData)
     return (responseData && Object.keys(responseData).length > 0)
       ? { status: 'ok', data: responseData }
       : { status: 'notfound', error: `Could not find hash '${hash}'` }
   } catch (error) {
+    debug('Redis get with hash \'%s\' failed: %s', hash, error)
     return createError(error, `Error from Redis while getting from hash '${hash}'.`)
   }
 }
@@ -39,10 +43,13 @@ const setItem = async (hmset: HMSet, item: SerializedData, prefix?: string): Pro
   const { id, ...fields } = item
   const hash = hashFromIdAndPrefix(id, prefix)
 
+  debug('Set to redis id \'%s\', hash \'$s\': %o', id, hash, fields)
   try {
-    await hmset(hash, itemToArray(fields))
+    const ret = await hmset(hash, itemToArray(fields))
+    debug('Redis set with hash \'%s\' returned %o', hash, ret)
     return { status: 'ok', data: null }
   } catch (error) {
+    debug('Redis set with hash \'%s\' failed: %s', hash, error)
     return createError(error, `Error from Redis while setting on hash '${hash}'.`)
   }
 }

@@ -56,8 +56,10 @@
     "npm": ">= 5.4"
   },
   "dependencies": {
+    "@types/debug": "^4.1.5",
     "@types/ramda": "^0.26.22",
     "@types/redis": "^2.8.13",
+    "debug": "^4.1.1",
     "map-any": "^0.2.1",
     "p-limit": "^2.2.1",
     "ramda": "^0.26.1",
