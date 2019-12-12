@@ -1,6 +1,6 @@
 {
   "name": "integreat-adapter-redis",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Redis adapter for Integreat",
   "author": "Kjell-Morten Bratsberg Thorsen <post@kjellmorten.no>",
   "license": "ISC",
@@ -57,8 +57,8 @@
   },
   "dependencies": {
     "@types/debug": "^4.1.5",
-    "@types/ramda": "^0.26.22",
-    "@types/redis": "^2.8.13",
+    "@types/ramda": "^0.26.38",
+    "@types/redis": "^2.8.14",
     "debug": "^4.1.1",
     "map-any": "^0.2.1",
     "p-limit": "^2.2.1",
@@ -66,14 +66,14 @@
     "redis": "^2.8.0"
   },
   "devDependencies": {
-    "@types/sinon": "^7.0.13",
+    "@types/sinon": "^7.5.1",
     "ava": "^2.4.0",
-    "coveralls": "^3.0.6",
+    "coveralls": "^3.0.9",
     "nyc": "^14.1.1",
     "sinon": "^7.5.0",
-    "ts-node": "^8.4.1",
-    "tslint": "^5.20.0",
+    "ts-node": "^8.5.4",
+    "tslint": "^5.20.1",
     "tslint-config-standard": "^8.0.1",
-    "typescript": "^3.6.3"
+    "typescript": "^3.7.3"
   }
 }
