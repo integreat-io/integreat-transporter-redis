@@ -23,7 +23,7 @@ const sendGet = async (client: redisLib.RedisClient, id?: string, prefix?: strin
   const hash = hashFromIdAndPrefix(id, prefix)
   const hgetall = promisify(client.hgetall).bind(client)
 
-  debug('Get from redis id \'%s\', hash \'$s\'.', id, hash)
+  debug('Get from redis id \'%s\', hash \'%s\'.', id, hash)
   try {
     const responseData = await hgetall(hash)
     debug('Redis get with hash \'%s\' returned %o', hash, responseData)
@@ -39,11 +39,15 @@ const sendGet = async (client: redisLib.RedisClient, id?: string, prefix?: strin
 const itemToArray = (fields: SerializedData) => Object.entries(fields)
   .reduce((arr, [key, value]) => [ ...arr, key, value ], [] as string[])
 
-const setItem = async (hmset: HMSet, item: SerializedData, prefix?: string): Promise<Response> => {
-  const { id, ...fields } = item
+const setItem = async (hmset: HMSet, item: SerializedData, id?: string | null, prefix?: string): Promise<Response> => {
+  const { id: itemId, ...fields } = item
+  id = itemId || id
+  if (typeof id !== 'string') {
+    return { status: 'badrequest', error: 'Cannot set data with no id' }
+  }
   const hash = hashFromIdAndPrefix(id, prefix)
 
-  debug('Set to redis id \'%s\', hash \'$s\': %o', id, hash, fields)
+  debug('Set to redis id \'%s\', hash \'%s\': %o', id, hash, fields)
   try {
     const ret = await hmset(hash, itemToArray(fields))
     debug('Redis set with hash \'%s\' returned %o', hash, ret)
@@ -56,6 +60,7 @@ const setItem = async (hmset: HMSet, item: SerializedData, prefix?: string): Pro
 
 const sendSet = async (
   client: redisLib.RedisClient,
+  id: string | null | undefined,
   data: SerializedData | SerializedData[],
   prefix?: string,
   concurrency = 1
@@ -67,19 +72,20 @@ const sendSet = async (
 
   const results = await Promise.all(
     ([] as SerializedData[]).concat(data)
-      .map(item => limit(() => setItem(hmset, item, prefix)))
+      .map(item => limit(() => setItem(hmset, item, id, prefix)))
   )
 
   const errors = results.filter(result => result.status !== 'ok')
   if (errors.length === 0) {
+    // No error — great!
     return { status: 'ok', data: null }
+  } else if (results.length === 1) {
+    // One result — return error as is
+    return errors[0]
   } else {
-    if (errors.length < results.length) {
-      // Looks strange, but adds this message to the end of the error message
-      errors.push({ status: 'ok', error: 'The rest succeeded' })
-    }
     const error = errors.map(result => result.error).join(' | ')
-    return { status: 'error', error }
+    const rest = (errors.length < results.length) ? ' | The rest succeeded' : ''
+    return { status: 'error', error: `${error}${rest}` }
   }
 }
 
@@ -97,7 +103,7 @@ const send = async (request: Request, connection: Connection | null): Promise<Re
   const concurrency = endpoint && endpoint.concurrency
 
   return (isData(data))
-    ? sendSet(client, data, prefix, concurrency)
+    ? sendSet(client, id, data, prefix, concurrency)
     : sendGet(client, id, prefix)
 }
 

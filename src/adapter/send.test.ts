@@ -154,6 +154,31 @@ test('should SET to redis', async (t) => {
   t.deepEqual(redisClient.hmset.args[0][1], expectedArgs)
 })
 
+test('should return badrequest for SET with no id', async (t) => {
+  const redisClient = {
+    hmset: sinon.stub().yieldsRight(null, 'OK')
+  }
+  const request = {
+    action: 'SET',
+    endpoint: {
+      prefix: 'store',
+      redis: redisOptions
+    },
+    params: {
+      type: 'meta'
+    },
+    data: {
+      title: 'Entry 1',
+      description: 'The first entry'
+    }
+  }
+
+  const ret = await send(request, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'badrequest')
+  t.is(redisClient.hmset.callCount, 0)
+})
+
 test('should SET several items to redis', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(null, 'OK')
@@ -198,6 +223,39 @@ test('should SET several items to redis', async (t) => {
   t.deepEqual(redisClient.hmset.args[1][1], expectedArgs2)
 })
 
+test('should SET to redis with id from params', async (t) => {
+  const redisClient = {
+    hmset: sinon.stub().yieldsRight(null, 'OK')
+  }
+  const request = {
+    action: 'SET',
+    endpoint: {
+      prefix: 'store',
+      redis: redisOptions
+    },
+    params: {
+      id: 'ent1',
+      type: 'meta'
+    },
+    data: {
+      title: 'Entry 1',
+      description: 'The first entry'
+    }
+  }
+  const expected = {
+    status: 'ok',
+    data: null
+  }
+  const expectedArgs = ['title', 'Entry 1', 'description', 'The first entry']
+
+  const ret = await send(request, wrapInConnection(redisClient))
+
+  t.deepEqual(ret, expected)
+  t.is(redisClient.hmset.callCount, 1)
+  t.deepEqual(redisClient.hmset.args[0][0], 'store:ent1')
+  t.deepEqual(redisClient.hmset.args[0][1], expectedArgs)
+})
+
 // Tests -- error handling
 
 test('should return error when redis throws on get', async (t) => {
@@ -236,14 +294,20 @@ test('should return error when redis throws on set', async (t) => {
     params: {
       type: 'meta'
     },
-    data: {
-      id: 'ent1',
-      title: 'Entry 1'
-    }
+    data: [
+      {
+        id: 'ent1',
+        title: 'Entry 1'
+      },
+      {
+        id: 'ent2',
+        title: 'Entry 2'
+      }
+    ]
   }
   const expected = {
     status: 'error',
-    error: 'Error from Redis while setting on hash \'ent1\'. Horror!'
+    error: 'Error from Redis while setting on hash \'ent1\'. Horror! | Error from Redis while setting on hash \'ent2\'. Horror!'
   }
 
   const ret = await send(request, wrapInConnection(redisClient))
