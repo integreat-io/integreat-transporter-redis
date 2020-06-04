@@ -26,7 +26,7 @@ export default function connect (redis: Redis) {
     if (connection) {
       return connection
     }
-    if (serviceOptions?.redis) {
+    if (serviceOptions && serviceOptions.redis) {
       const client = redis.createClient(serviceOptions.redis)
       const connection = wrapInOk(client)
 
