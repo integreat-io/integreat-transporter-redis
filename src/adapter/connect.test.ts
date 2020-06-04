@@ -6,7 +6,13 @@ import connect from './connect'
 
 // Setup
 
-const client = {} as redisLib.RedisClient
+interface Listener {
+  (error: Error): void
+}
+
+const client = {
+  on: () => client
+} as unknown as redisLib.RedisClient
 
 // Tests
 
@@ -48,4 +54,24 @@ test('should return error when no redis options', async (t) => {
 
   t.deepEqual(ret, expectedConnection)
   t.is(redis.createClient.callCount, 0)
+})
+
+test('should disconnect on error', async (t) => {
+  let errorListener: Listener | null = null
+  const clientWithQuit = {
+    ...client,
+    on: (_eventName: string, listener: Listener) => { errorListener = listener },
+    quit: sinon.stub().yieldsRight(null)
+  }
+  const redis = {
+    createClient: sinon.stub().returns(clientWithQuit)
+  }
+  const serviceOptions = { redis: { url: 'redis://localhost:6379' } }
+
+  const connection = await connect(redis)(serviceOptions, null, null)
+  t.truthy(connection.redisClient)
+  t.is(typeof errorListener, 'function')
+  errorListener!(new Error('Failure'))
+
+  t.is(clientWithQuit.quit.callCount, 1)
 })

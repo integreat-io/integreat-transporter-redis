@@ -14,6 +14,7 @@ test('should call quit on redis client', async (t) => {
   await disconnect(connection)
 
   t.is(redisClient.quit.callCount, 1)
+  t.is(connection.redisClient, null)
 })
 
 test('should do nothing when no connection', async (t) => {

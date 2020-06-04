@@ -1,5 +1,6 @@
 import redisLib = require('redis')
 import { EndpointOptions, Connection } from '.'
+import disconnect from './disconnect'
 
 interface Redis {
   createClient: (options?: { [key: string]: string }) => redisLib.RedisClient
@@ -25,8 +26,15 @@ export default function connect (redis: Redis) {
     if (connection) {
       return connection
     }
-    return (serviceOptions && serviceOptions.redis)
-      ? wrapInOk(redis.createClient(serviceOptions.redis))
-      : createErrorResponse()
+    if (serviceOptions?.redis) {
+      const client = redis.createClient(serviceOptions.redis)
+      const connection = wrapInOk(client)
+
+      client.on('error', () => disconnect(connection))
+
+      return connection
+    } else {
+      return createErrorResponse()
+    }
   }
 }

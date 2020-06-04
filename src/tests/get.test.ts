@@ -14,7 +14,8 @@ test('should get data from redis service', async (t) => {
   }
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(null, redisData),
-    quit: sinon.stub().yieldsRight(null)
+    quit: sinon.stub().yieldsRight(null),
+    on: () => redisClient
   }
   const redis = {
     createClient: sinon.stub().returns(redisClient)

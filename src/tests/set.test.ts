@@ -17,7 +17,8 @@ const generateData = (count: number) => [...Array(count).keys()]
 test('should set data to redis service', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(null, 'OK'),
-    quit: sinon.stub().yieldsRight(null)
+    quit: sinon.stub().yieldsRight(null),
+    on: () => redisClient
   }
   const redis = {
     createClient: sinon.stub().returns(redisClient)
@@ -67,7 +68,8 @@ test('should set data to redis service', async (t) => {
 test('should set data array to redis service', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(null, 'OK'),
-    quit: sinon.stub().yieldsRight(null)
+    quit: sinon.stub().yieldsRight(null),
+    on: () => redisClient
   }
   const adapter = {
     ...resources.adapters.redis,
