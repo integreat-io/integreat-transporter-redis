@@ -43,6 +43,21 @@ test('should return existing client when given', async (t) => {
   t.is(redis.createClient.callCount, 0)
 })
 
+test('should reconnect when a connection is missing client', async (t) => {
+  let errorListener: Listener | null = null
+  const redis = {
+    createClient: sinon.stub().returns(client)
+  }
+  const serviceOptions = { redis: { url: 'redis://localhost:6379' } }
+  const connection = { status: 'ok', redisClient: null }
+
+  const ret = await connect(redis)(serviceOptions, null, connection)
+
+  t.is(ret.status, 'ok')
+  t.is(ret.redisClient, client)
+  t.is(redis.createClient.callCount, 1)
+})
+
 test('should return error when no redis options', async (t) => {
   const redis = {
     createClient: sinon.stub().returns({})

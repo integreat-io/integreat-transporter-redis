@@ -23,7 +23,7 @@ export default function connect (redis: Redis) {
     _auth: object | null,
     connection: Connection | null
   ): Promise<Connection> => {
-    if (connection) {
+    if (connection && connection.redisClient) {
       return connection
     }
     if (serviceOptions && serviceOptions.redis) {
