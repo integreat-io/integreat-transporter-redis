@@ -42,7 +42,7 @@ export default function connect (redis: Redis) {
     }
 
     // Connect to redis (create a new redis client)
-    if (options?.redis) {
+    if (options && options.redis) {
       const client = redis.createClient(options.redis)
       const connection = wrapInOk(client, options.connectionTimeout)
 
