@@ -23,6 +23,7 @@ export interface EndpointOptions {
     [key: string]: string
   }
   concurrency?: number
+  connectionTimeout?: number
 }
 
 export interface Params {
@@ -46,6 +47,7 @@ export interface Response {
 export interface Connection {
   status: string,
   error?: string,
+  expire?: null | number,
   redisClient: redis.RedisClient | null
 }
 
