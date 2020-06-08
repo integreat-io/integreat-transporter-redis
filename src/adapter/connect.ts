@@ -1,6 +1,7 @@
 import redisLib = require('redis')
 import { EndpointOptions, Connection } from '.'
 import disconnect from './disconnect'
+const debug = require('debug')('great:adapter:redis')
 
 interface Redis {
   createClient: (options?: { [key: string]: string }) => redisLib.RedisClient
@@ -38,15 +39,20 @@ export default function connect (redis: Redis) {
       }
 
       // ... unless it is expired. If so, disconnect and connect again
+      debug('Disconnecting Redis due to expired connection (timeout reached)')
       await disconnect(connection)
     }
 
     // Connect to redis (create a new redis client)
     if (options && options.redis) {
+      debug('Creating new Redis client')
       const client = redis.createClient(options.redis)
       const connection = wrapInOk(client, options.connectionTimeout)
 
-      client.on('error', () => disconnect(connection))
+      client.on('error', () => {
+        debug('Redis error. Disconnecting')
+        return disconnect(connection)
+      })
 
       return connection
     } else {
