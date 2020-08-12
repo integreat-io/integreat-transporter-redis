@@ -8,7 +8,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "start": "tsc && node dist/index.js",
-    "test": "npm run lint && npm run build && nyc --reporter=text-summary ava ./dist/**/*.test.js",
+    "test": "npm run lint && npm run build && nyc --reporter=text-summary ava --config ./ava-dist.config.js",
     "test:watch": "npm run dev",
     "test:inspect": "node --inspect node_modules/ava/profile.js",
     "dev": "ava --watch",
@@ -17,21 +17,6 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "nyc:report": "nyc report",
     "lint": "tslint --project tsconfig.json --config tslint.json"
-  },
-  "ava": {
-    "compileEnhancements": false,
-    "extensions": [
-      "ts"
-    ],
-    "require": [
-      "ts-node/register/transpile-only"
-    ],
-    "files": [
-      "src/**/*.test.ts"
-    ],
-    "sources": [
-      "src/**/!(*.test).ts"
-    ]
   },
   "nyc": {
     "extension": [
@@ -57,23 +42,23 @@
   },
   "dependencies": {
     "@types/debug": "^4.1.5",
-    "@types/ramda": "^0.27.6",
-    "@types/redis": "^2.8.22",
-    "debug": "^4.1.1",
+    "@types/ramda": "^0.27.14",
+    "@types/redis": "^2.8.25",
+    "debug": "^4.2.0",
     "map-any": "^0.2.1",
-    "p-limit": "^2.3.0",
-    "ramda": "^0.27.0",
+    "p-limit": "^3.0.2",
+    "ramda": "^0.27.1",
     "redis": "^3.0.2"
   },
   "devDependencies": {
     "@types/sinon": "^9.0.4",
-    "ava": "^2.4.0",
+    "ava": "^3.11.1",
     "coveralls": "^3.1.0",
     "nyc": "^15.1.0",
-    "sinon": "^9.0.2",
-    "ts-node": "^8.5.4",
-    "tslint": "^5.20.1",
-    "tslint-config-standard": "^8.0.1",
-    "typescript": "^3.7.3"
+    "sinon": "^9.0.3",
+    "ts-node": "^8.10.2",
+    "tslint": "^6.1.3",
+    "tslint-config-standard": "^9.0.0",
+    "typescript": "^3.9.7"
   }
 }

@@ -1,6 +1,6 @@
 import { promisify } from 'util'
 import redisLib = require('redis')
-import pLimit from 'p-limit'
+import pLimit = require('p-limit')
 const debug = require('debug')('great:adapter:redis')
 import { Request, Response, SerializedData, Connection } from '.'
 
