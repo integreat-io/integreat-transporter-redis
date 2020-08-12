@@ -34,6 +34,7 @@ export default function connect (redis: Redis) {
   ): Promise<Connection> => {
     // If a connection with a redisClient is given -- return it
     if (connection?.redisClient) {
+      debug(`Redis client expire time ${connection.expire} (at ${Date.now()}).`)
       if (!isExpired(connection.expire)) {
         return connection
       }
@@ -45,7 +46,7 @@ export default function connect (redis: Redis) {
 
     // Connect to redis (create a new redis client)
     if (options && options.redis) {
-      debug('Creating new Redis client')
+      debug(`Creating new Redis client with expire timeout ${options.connectionTimeout}.`)
       const client = redis.createClient(options.redis)
       const connection = wrapInOk(client, options.connectionTimeout)
 
