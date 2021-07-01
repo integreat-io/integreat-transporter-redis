@@ -146,6 +146,31 @@ test('should return not found for GET with no id', async (t) => {
   t.deepEqual(ret, expected)
 })
 
+test('should respond with badrequest when array of ids', async (t) => {
+  const redisClient = {
+    hgetall: sinon.stub().yieldsRight(null, null),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      id: ['meta:entries', 'meta:other'],
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+  const expected = {
+    status: 'badrequest',
+    error: 'Array of ids not supported',
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.deepEqual(ret, expected)
+  t.is(redisClient.hgetall.callCount, 0)
+})
+
 // Tests -- SET
 
 test('should SET to redis', async (t) => {

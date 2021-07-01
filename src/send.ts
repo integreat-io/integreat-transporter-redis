@@ -155,13 +155,13 @@ export default async function send(
   }
   const {
     type: actionType,
-    meta: { options } = {},
+    meta,
     payload: { data, id },
   } = action
 
-  const prefix = options?.prefix
+  const prefix = meta?.options?.prefix
   const client = connection.redisClient
-  const concurrency = options?.concurrency
+  const concurrency = meta?.options?.concurrency
 
   if (Array.isArray(id)) {
     return { status: 'badrequest', error: 'Array of ids not supported' }
