@@ -1,32 +1,20 @@
 {
   "name": "integreat-adapter-redis",
-  "version": "0.3.4",
+  "version": "0.4.0-alpha.0",
   "description": "Redis adapter for Integreat",
   "author": "Kjell-Morten Bratsberg Thorsen <post@kjellmorten.no>",
   "license": "ISC",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "start": "tsc && node dist/index.js",
-    "test": "npm run lint && npm run build && nyc --reporter=text-summary ava --config ./ava-dist.config.js",
-    "test:watch": "npm run dev",
+    "test": "npm run build && nyc --reporter=text-summary ava --config ./ava-dist.config.js",
     "test:inspect": "node --inspect node_modules/ava/profile.js",
+    "test:watch": "npm run dev",
     "dev": "ava --watch",
     "build": "tsc",
-    "prepare": "npm run build",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "nyc:report": "nyc report",
-    "lint": "tslint --project tsconfig.json --config tslint.json"
-  },
-  "nyc": {
-    "extension": [
-      ".ts",
-      ".js"
-    ],
-    "include": [
-      "**/!(*.test).js",
-      "**/!(*.test|*.d).ts"
-    ]
+    "nyc:report": "nyc report --reporter=text --reporter=html",
+    "lint": "eslint --ext .ts src"
   },
   "repository": {
     "type": "git",
@@ -37,28 +25,21 @@
   },
   "homepage": "https://github.com/integreat-io/integreat-adapter-redis#readme",
   "engines": {
-    "node": ">= 8.6",
-    "npm": ">= 5.4"
+    "node": ">= 14"
   },
   "dependencies": {
-    "@types/debug": "^4.1.5",
-    "@types/ramda": "^0.27.14",
-    "@types/redis": "^2.8.25",
-    "debug": "^4.2.0",
+    "@types/debug": "^4.1.6",
+    "@types/ramda": "^0.27.42",
+    "@types/redis": "^2.8.30",
+    "debug": "^4.3.2",
     "map-any": "^0.2.1",
-    "p-limit": "^3.0.2",
+    "p-limit": "^3.1.0",
     "ramda": "^0.27.1",
-    "redis": "^3.0.2"
+    "redis": "^3.1.2"
   },
   "devDependencies": {
-    "@types/sinon": "^9.0.4",
-    "ava": "^3.11.1",
-    "coveralls": "^3.1.0",
-    "nyc": "^15.1.0",
-    "sinon": "^9.0.3",
-    "ts-node": "^8.10.2",
-    "tslint": "^6.1.3",
-    "tslint-config-standard": "^9.0.0",
-    "typescript": "^3.9.7"
+    "@integreat/ts-dev-setup": "^2.0.1",
+    "@types/sinon": "^10.0.2",
+    "sinon": "^11.1.1"
   }
 }
