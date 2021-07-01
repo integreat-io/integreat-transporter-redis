@@ -31,7 +31,7 @@ export interface Action {
 }
 
 export interface Response {
-  status: string
+  status: string | null
   data?: unknown
   error?: string
 }
