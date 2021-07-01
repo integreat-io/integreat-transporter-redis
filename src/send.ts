@@ -109,10 +109,15 @@ const setItem = async (
 const sendSet = async (
   client: redisLib.RedisClient,
   id: string | null | undefined,
-  data: Record<string, unknown> | Record<string, unknown>[],
+  data: unknown,
   prefix?: string,
   concurrency = 1
 ) => {
+  const items = ([] as unknown[]).concat(data).filter(isObject)
+  if (items.length === 0) {
+    return { status: 'noaction', error: 'No data to SET' }
+  }
+
   const hmset: HMSet = promisify<string, string[], 'OK'>(client.hmset).bind(
     client
   )
@@ -121,9 +126,7 @@ const sendSet = async (
   const limit = pLimit(concurrency)
 
   const results = await Promise.all(
-    ([] as Record<string, unknown>[])
-      .concat(data)
-      .map((item) => limit(() => setItem(hmset, item, id, prefix)))
+    items.map((item) => limit(() => setItem(hmset, item, id, prefix)))
   )
 
   const errors = results.filter((result) => result.status !== 'ok')
@@ -151,6 +154,7 @@ export default async function send(
     }
   }
   const {
+    type: actionType,
     meta: { options } = {},
     payload: { data, id },
   } = action
@@ -163,7 +167,7 @@ export default async function send(
     return { status: 'badrequest', error: 'Array of ids not supported' }
   }
 
-  return isObject(data)
+  return actionType === 'SET'
     ? sendSet(client, id, data, prefix, concurrency)
     : sendGet(client, id, prefix)
 }

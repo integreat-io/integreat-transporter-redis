@@ -314,6 +314,34 @@ test('should SET to redis with id from params', async (t) => {
   t.deepEqual(redisClient.hmset.args[0][1], expectedArgs)
 })
 
+test('should SET respond with noaction when no data', async (t) => {
+  const redisClient = {
+    hmset: sinon.stub().yieldsRight(null, 'OK'),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      type: 'meta',
+      data: null,
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'noaction',
+    error: 'No data to SET',
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.deepEqual(ret, expected)
+  t.is(redisClient.hmset.callCount, 0)
+})
+
 // Tests -- error handling
 
 test('should return error when redis throws on get', async (t) => {
