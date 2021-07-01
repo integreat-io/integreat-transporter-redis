@@ -40,7 +40,7 @@ export interface Connection extends Record<string, unknown> {
   status: string
   error?: string
   expire?: null | number
-  redisClient: redis.RedisClient | null
+  redisClient?: redis.RedisClient | null
 }
 
 export default {
