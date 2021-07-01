@@ -1,4 +1,5 @@
 src/
+coverage
 *.test.js
 *.test.d.ts
 *.map
