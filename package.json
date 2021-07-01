@@ -1,6 +1,6 @@
 {
   "name": "integreat-adapter-redis",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Redis adapter for Integreat",
   "author": "Kjell-Morten Bratsberg Thorsen <post@kjellmorten.no>",
   "license": "ISC",
@@ -12,6 +12,7 @@
     "test:watch": "npm run dev",
     "dev": "ava --watch",
     "build": "tsc",
+    "prepublish": "npm run build",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "nyc:report": "nyc report --reporter=text --reporter=html",
     "lint": "eslint --ext .ts src"
