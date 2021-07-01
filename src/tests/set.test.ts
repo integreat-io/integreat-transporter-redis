@@ -1,15 +1,15 @@
 import test from 'ava'
 import sinon = require('sinon')
 
-import connect from '../adapter/connect'
-import resources from '..'
+import connect from '../connect'
+import redisAdapter from '..'
 
 // Setup
 
-const generateData = (count: number) => [...Array(count).keys()]
-  .map((index: number) => ({
+const generateData = (count: number) =>
+  [...Array(count).keys()].map((index: number) => ({
     id: `ent${index + 1}`,
-    title: `Entry ${index + 1}`
+    title: `Entry ${index + 1}`,
   }))
 
 // Tests
@@ -18,45 +18,49 @@ test('should set data to redis service', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(null, 'OK'),
     quit: sinon.stub().yieldsRight(null),
-    on: () => redisClient
+    on: () => redisClient,
   }
   const redis = {
-    createClient: sinon.stub().returns(redisClient)
+    createClient: sinon.stub().returns(redisClient),
   }
   const adapter = {
-    ...resources.adapters.redis,
-    connect: connect(redis)
+    ...redisAdapter,
+    connect: connect(redis),
   }
   const data = {
     id: 'meta:ent1',
     title: 'Entry 1',
     description: 'The first entry',
-    author: { id: 'johnf', name: 'John F.' }
+    author: { id: 'johnf', name: 'John F.' },
   }
-  const request = {
-    action: 'SET',
-    endpoint: {
-      prefix: 'store',
-      redis: {
-        uri: 'redis://localhost:6379'
-      }
+  const options = {
+    prefix: 'store',
+    redis: {
+      uri: 'redis://localhost:6379',
     },
-    data,
-    params: {
+  }
+  const action = {
+    type: 'SET',
+    payload: {
       type: 'meta',
-      keys: ['title', 'description', 'author']
-    }
+      data,
+      params: {
+        keys: ['title', 'description', 'author'],
+      },
+    },
+    meta: { options },
   }
   const expectedData = [
-    'title', 'Entry 1',
-    'description', 'The first entry',
-    'author', JSON.stringify({ id: 'johnf', name: 'John F.' })
+    'title',
+    'Entry 1',
+    'description',
+    'The first entry',
+    'author',
+    JSON.stringify({ id: 'johnf', name: 'John F.' }),
   ]
 
-  const serializedRequest = await adapter.serialize(request)
-  const client = await adapter.connect(request.endpoint, null, null)
-  const response = await adapter.send(serializedRequest, client)
-  const ret = await adapter.normalize(response, request)
+  const client = await adapter.connect(options, null, null)
+  const ret = await adapter.send(action, client)
   await adapter.disconnect(client)
 
   t.is(ret.status, 'ok')
@@ -69,30 +73,30 @@ test('should set data array to redis service', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(null, 'OK'),
     quit: sinon.stub().yieldsRight(null),
-    on: () => redisClient
+    on: () => redisClient,
   }
   const adapter = {
-    ...resources.adapters.redis,
+    ...redisAdapter,
     connect: connect({
-      createClient: sinon.stub().returns(redisClient)
-    })
+      createClient: sinon.stub().returns(redisClient),
+    }),
   }
-  const data = generateData(50)
-  const request = {
-    action: 'SET',
-    endpoint: {
-      prefix: 'store',
-      redis: { uri: 'redis://localhost:6379' },
-      concurrency: 5
+  const options = {
+    prefix: 'store',
+    redis: { uri: 'redis://localhost:6379' },
+    concurrency: 5,
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      type: 'meta',
+      data: generateData(50),
     },
-    data,
-    params: { type: 'meta' }
+    meta: { options },
   }
 
-  const serializedRequest = await adapter.serialize(request)
-  const client = await adapter.connect(request.endpoint, null, null)
-  const response = await adapter.send(serializedRequest, client)
-  const ret = await adapter.normalize(response, request)
+  const client = await adapter.connect(options, null, null)
+  const ret = await adapter.send(action, client)
   await adapter.disconnect(client)
 
   t.is(ret.status, 'ok')

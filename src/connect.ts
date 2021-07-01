@@ -1,7 +1,9 @@
 import redisLib = require('redis')
-import { EndpointOptions, Connection } from '.'
+import { Options, Connection } from '.'
 import disconnect from './disconnect'
-const debug = require('debug')('great:adapter:redis')
+import debugFn from 'debug'
+
+const debug = debugFn('great:adapter:redis')
 
 interface Redis {
   createClient: (options?: { [key: string]: string }) => redisLib.RedisClient
@@ -13,25 +15,27 @@ const wrapInOk = (
 ) => ({
   status: 'ok',
   redisClient,
-  expire: typeof connectionTimeout === 'number'
-    ? Date.now() + connectionTimeout : null
+  expire:
+    typeof connectionTimeout === 'number'
+      ? Date.now() + connectionTimeout
+      : null,
 })
 
 const createErrorResponse = () => ({
   status: 'error',
   error: 'No redis options',
-  redisClient: null
+  redisClient: null,
 })
 
 const isExpired = (expire?: number | null) =>
   typeof expire === 'number' && expire < Date.now()
 
-export default function connect (redis: Redis) {
+export default function connect(redis: Redis) {
   return async (
-    options: EndpointOptions,
-    _auth: object | null,
+    options: Options,
+    _auth: Record<string, unknown> | null,
     connection: Connection | null
-  ): Promise<Connection> => {
+  ): Promise<Connection | null> => {
     // If a connection with a redisClient is given -- return it
     if (connection?.redisClient) {
       debug(`Redis client expire time ${connection.expire} (at ${Date.now()}).`)
@@ -46,7 +50,9 @@ export default function connect (redis: Redis) {
 
     // Connect to redis (create a new redis client)
     if (options && options.redis) {
-      debug(`Creating new Redis client with expire timeout ${options.connectionTimeout}.`)
+      debug(
+        `Creating new Redis client with expire timeout ${options.connectionTimeout}.`
+      )
       const client = redis.createClient(options.redis)
       const connection = wrapInOk(client, options.connectionTimeout)
 

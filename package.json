@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "npm run build && nyc --reporter=text-summary ava --config ./ava-dist.config.js",
+    "test": "npm run lint && npm run build && nyc --reporter=text-summary ava --config ./ava-dist.config.js",
     "test:inspect": "node --inspect node_modules/ava/profile.js",
     "test:watch": "npm run dev",
     "dev": "ava --watch",
@@ -29,16 +29,14 @@
   },
   "dependencies": {
     "@types/debug": "^4.1.6",
-    "@types/ramda": "^0.27.42",
     "@types/redis": "^2.8.30",
     "debug": "^4.3.2",
     "map-any": "^0.2.1",
     "p-limit": "^3.1.0",
-    "ramda": "^0.27.1",
     "redis": "^3.1.2"
   },
   "devDependencies": {
-    "@integreat/ts-dev-setup": "^2.0.1",
+    "@integreat/ts-dev-setup": "^2.0.2",
     "@types/sinon": "^10.0.2",
     "sinon": "^11.1.1"
   }

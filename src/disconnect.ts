@@ -1,8 +1,12 @@
 import { promisify } from 'util'
 import { Connection } from '.'
-const debug = require('debug')('great:adapter:redis')
+import debugFn from 'debug'
 
-export default async function disconnect (connection: Connection | null) {
+const debug = debugFn('great:adapter:redis')
+
+export default async function disconnect(
+  connection: Connection | null
+): Promise<void> {
   if (connection && connection.status === 'ok' && connection.redisClient) {
     debug('Disconnect Redis client')
     await promisify(connection.redisClient.quit).bind(connection.redisClient)()

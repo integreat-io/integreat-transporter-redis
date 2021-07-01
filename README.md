@@ -14,7 +14,7 @@ database.
 
 ### Prerequisits
 
-Requires node v8.6 and Integreat v0.7.
+Requires node v14 and Integreat v0.8.
 
 ### Installing and using
 
@@ -25,13 +25,14 @@ npm install integreat-adapter-redis
 ```
 
 Example of use:
-```javascript
-const integreat = require('integreat')
-const redisAdapter = require('integreat-adapter-redis')
-const defs = require('./config')
 
-const resources = integreat.resources(redisAdapter)
-const great = integreat(defs, resources)
+```javascript
+import integreat from 'integreat'
+import redisAdapter from 'integreat-adapter-redis'
+import defs from './config'
+
+const resources = integreat.resources({ transporters: { redis: redisAdapter } })
+const great = Integreat.create(defs, resources)
 
 // ... and then dispatch actions as usual
 ```

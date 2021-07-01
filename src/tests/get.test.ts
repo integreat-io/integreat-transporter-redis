@@ -1,8 +1,8 @@
 import test from 'ava'
 import sinon = require('sinon')
 
-import connect from '../adapter/connect'
-import resources from '..'
+import connect from '../connect'
+import redisAdapter from '..'
 
 // Tests
 
@@ -10,43 +10,47 @@ test('should get data from redis service', async (t) => {
   const redisData = {
     title: 'Entry 1',
     description: 'The first entry',
-    author: JSON.stringify({ id: 'johnf', name: 'John F.' })
+    author: JSON.stringify({ id: 'johnf', name: 'John F.' }),
   }
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(null, redisData),
     quit: sinon.stub().yieldsRight(null),
-    on: () => redisClient
+    on: () => redisClient,
   }
   const redis = {
-    createClient: sinon.stub().returns(redisClient)
+    createClient: sinon.stub().returns(redisClient),
   }
   const adapter = {
-    ...resources.adapters.redis,
-    connect: connect(redis)
+    ...redisAdapter,
+    connect: connect(redis),
   }
-  const request = {
-    action: 'GET',
-    endpoint: {
-      prefix: 'store',
-      redis: {
-        uri: 'redis://localhost:6379'
-      }
+  const options = {
+    prefix: 'store',
+    redis: {
+      uri: 'redis://localhost:6379',
     },
-    params: {
+  }
+  const action = {
+    type: 'GET',
+    payload: {
       type: 'meta',
       id: 'meta:entries',
-      keys: ['title', 'description', 'author']
-    }
+      params: {
+        keys: ['title', 'description', 'author'],
+      },
+    },
+    meta: {
+      options,
+    },
   }
   const expectedData = {
     title: 'Entry 1',
     description: 'The first entry',
-    author: { id: 'johnf', name: 'John F.' }
+    author: { id: 'johnf', name: 'John F.' },
   }
 
-  const client = await adapter.connect(request.endpoint, null, null)
-  const response = await adapter.send(request, client)
-  const ret = await adapter.normalize(response, request)
+  const client = await adapter.connect(options, null, null)
+  const ret = await adapter.send(action, client)
   await adapter.disconnect(client)
 
   t.is(ret.status, 'ok')

@@ -1,5 +1,6 @@
 import test from 'ava'
 import sinon = require('sinon')
+import { Connection } from '.'
 
 import disconnect from './disconnect'
 
@@ -7,9 +8,12 @@ import disconnect from './disconnect'
 
 test('should call quit on redis client', async (t) => {
   const redisClient = {
-    quit: sinon.stub().yieldsRight(null)
+    quit: sinon.stub().yieldsRight(null),
   }
-  const connection = { status: 'ok', redisClient: redisClient as any }
+  const connection = {
+    status: 'ok',
+    redisClient: redisClient,
+  } as unknown as Connection
 
   await disconnect(connection)
 
