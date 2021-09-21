@@ -38,7 +38,7 @@ test('should GET from redis', async (t) => {
     type: 'GET',
     payload: {
       type: 'meta',
-      id: 'meta:entries',
+      id: 'entries',
     },
     meta: {
       options: { redis: redisOptions },
@@ -67,7 +67,7 @@ test('should GET from redis', async (t) => {
   t.deepEqual(redisClient.hgetall.args[0][0], 'meta:entries')
 })
 
-test('should prepend prefix to redis hash', async (t) => {
+test('should prepend prefix and type to redis hash', async (t) => {
   const redisData = {
     title: 'Entry 1',
     description: 'The first entry',
@@ -79,7 +79,7 @@ test('should prepend prefix to redis hash', async (t) => {
     type: 'GET',
     payload: {
       type: 'meta',
-      id: 'meta:entries',
+      id: 'entries',
     },
     meta: {
       options: {
@@ -94,6 +94,34 @@ test('should prepend prefix to redis hash', async (t) => {
   t.deepEqual(redisClient.hgetall.args[0][0], 'store:meta:entries')
 })
 
+test('should prepend only prefix to redis hash when useTypeAsPrefix is false', async (t) => {
+  const redisData = {
+    title: 'Entry 1',
+    description: 'The first entry',
+  }
+  const redisClient = {
+    hgetall: sinon.stub().yieldsRight(null, redisData),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      id: 'entries',
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+        useTypeAsPrefix: false,
+      },
+    },
+  }
+
+  await send(action, wrapInConnection(redisClient))
+
+  t.deepEqual(redisClient.hgetall.args[0][0], 'store:entries')
+})
+
 test('should return not found for GET on empty data', async (t) => {
   const redisData = {}
   const redisClient = {
@@ -103,7 +131,7 @@ test('should return not found for GET on empty data', async (t) => {
     type: 'GET',
     payload: {
       type: 'meta',
-      id: 'meta:entries',
+      id: 'entries',
     },
     meta: {
       options: {
@@ -154,7 +182,7 @@ test('should respond with badrequest when array of ids', async (t) => {
     type: 'GET',
     payload: {
       type: 'meta',
-      id: ['meta:entries', 'meta:other'],
+      id: ['entries', 'other'],
     },
     meta: {
       options: { redis: redisOptions },
@@ -227,7 +255,7 @@ test('should SET to redis', async (t) => {
 
   t.deepEqual(ret, expected)
   t.is(redisClient.hmset.callCount, 1)
-  t.deepEqual(redisClient.hmset.args[0][0], 'store:ent1')
+  t.deepEqual(redisClient.hmset.args[0][0], 'store:meta:ent1')
   t.deepEqual(redisClient.hmset.args[0][1], expectedArgs)
 })
 
@@ -298,9 +326,9 @@ test('should SET several items to redis', async (t) => {
 
   t.deepEqual(ret, expected)
   t.is(redisClient.hmset.callCount, 2)
-  t.deepEqual(redisClient.hmset.args[0][0], 'store:ent1')
+  t.deepEqual(redisClient.hmset.args[0][0], 'store:meta:ent1')
   t.deepEqual(redisClient.hmset.args[0][1], expectedArgs1)
-  t.deepEqual(redisClient.hmset.args[1][0], 'store:ent2')
+  t.deepEqual(redisClient.hmset.args[1][0], 'store:meta:ent2')
   t.deepEqual(redisClient.hmset.args[1][1], expectedArgs2)
 })
 
@@ -335,8 +363,88 @@ test('should SET to redis with id from params', async (t) => {
 
   t.deepEqual(ret, expected)
   t.is(redisClient.hmset.callCount, 1)
-  t.deepEqual(redisClient.hmset.args[0][0], 'store:ent1')
+  t.deepEqual(redisClient.hmset.args[0][0], 'store:meta:ent1')
   t.deepEqual(redisClient.hmset.args[0][1], expectedArgs)
+})
+
+test('should SET with type from data when set', async (t) => {
+  const redisClient = {
+    hmset: sinon.stub().yieldsRight(null, 'OK'),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      type: ['meta', 'stats'],
+      data: {
+        id: 'ent1',
+        $type: 'meta',
+        title: 'Entry 1',
+        description: 'The first entry',
+        author: { id: 'johnf', name: 'John F.' },
+        updateCount: 3,
+        draft: false,
+        missing: undefined,
+        nil: null,
+        createdAt: new Date('2019-01-31T18:43:11Z'),
+      },
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'ok',
+    data: null,
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.deepEqual(ret, expected)
+  t.is(redisClient.hmset.callCount, 1)
+  t.deepEqual(redisClient.hmset.args[0][0], 'store:meta:ent1')
+})
+
+test('should SET without type in prefix when useTypeAsPrefix is false', async (t) => {
+  const redisClient = {
+    hmset: sinon.stub().yieldsRight(null, 'OK'),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      type: 'meta',
+      data: {
+        id: 'ent1',
+        title: 'Entry 1',
+        description: 'The first entry',
+        author: { id: 'johnf', name: 'John F.' },
+        updateCount: 3,
+        draft: false,
+        missing: undefined,
+        nil: null,
+        createdAt: new Date('2019-01-31T18:43:11Z'),
+      },
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+        useTypeAsPrefix: false,
+      },
+    },
+  }
+  const expected = {
+    status: 'ok',
+    data: null,
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.deepEqual(ret, expected)
+  t.is(redisClient.hmset.callCount, 1)
+  t.deepEqual(redisClient.hmset.args[0][0], 'store:ent1')
 })
 
 test('should SET respond with noaction when no data', async (t) => {
@@ -377,7 +485,7 @@ test('should return error when redis throws on get', async (t) => {
     type: 'GET',
     payload: {
       type: 'meta',
-      id: 'meta:entries',
+      id: 'entries',
     },
     meta: {
       options: {
@@ -423,7 +531,7 @@ test('should return error when redis throws on set', async (t) => {
   const expected = {
     status: 'error',
     error:
-      "Error from Redis while setting on hash 'ent1'. Horror! | Error from Redis while setting on hash 'ent2'. Horror!",
+      "Error from Redis while setting on hash 'meta:ent1'. Horror! | Error from Redis while setting on hash 'meta:ent2'. Horror!",
   }
 
   const ret = await send(action, wrapInConnection(redisClient))
@@ -463,7 +571,7 @@ test('should return error when redis throws on one of more sets', async (t) => {
   const expected = {
     status: 'error',
     error:
-      "Error from Redis while setting on hash 'ent2'. Horror! | The rest succeeded",
+      "Error from Redis while setting on hash 'meta:ent2'. Horror! | The rest succeeded",
   }
 
   const ret = await send(action, wrapInConnection(redisClient))
@@ -506,6 +614,26 @@ test('should return error when no client', async (t) => {
         redis: redisOptions,
       },
     },
+  }
+  const connection = { status: 'error', error: 'Fail', redisClient: null }
+  const expected = {
+    status: 'error',
+    error: "No redis client given to redis adapter's send method",
+  }
+
+  const ret = await send(action, connection)
+
+  t.deepEqual(ret, expected)
+})
+
+test('should return error when no options', async (t) => {
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      id: 'meta:entries',
+    },
+    meta: {},
   }
   const connection = { status: 'error', error: 'Fail', redisClient: null }
   const expected = {

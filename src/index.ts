@@ -10,6 +10,7 @@ export interface Options extends Record<string, unknown> {
   }
   concurrency?: number
   connectionTimeout?: number
+  useTypeAsPrefix?: boolean
 }
 
 export interface Payload extends Record<string, unknown> {

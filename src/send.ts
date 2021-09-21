@@ -14,8 +14,8 @@ interface HMSet {
 const isObject = (data: unknown): data is Record<string, unknown> =>
   typeof data === 'object' && data !== null
 
-const hashFromIdAndPrefix = (id: string, prefix?: string) =>
-  typeof prefix === 'string' && prefix !== '' ? `${prefix}:${id}` : id
+const hashFromIdAndPrefix = (id: string, type?: string, prefix?: string) =>
+  [prefix, type, id].filter(Boolean).join(':')
 
 const createError = (error: Error, message: string) => ({
   status: 'error',
@@ -46,15 +46,20 @@ const serializeValue = (value: unknown) =>
     ? serializeObject(value)
     : String(value)
 
+const useType = (useTypeAsPrefix: boolean, type?: string | string[]) =>
+  useTypeAsPrefix && typeof type === 'string' ? type : undefined
+
 const sendGet = async (
   client: redisLib.RedisClient,
+  useTypeAsPrefix: boolean,
   id?: string,
+  type?: string | string[],
   prefix?: string
 ) => {
   if (!id) {
     return { status: 'notfound', error: 'Cannot get data with no id' }
   }
-  const hash = hashFromIdAndPrefix(id, prefix)
+  const hash = hashFromIdAndPrefix(id, useType(useTypeAsPrefix, type), prefix)
   const hgetall = promisify(client.hgetall).bind(client)
 
   debug("Get from redis id '%s', hash '%s'.", id, hash)
@@ -67,7 +72,7 @@ const sendGet = async (
   } catch (error) {
     debug("Redis get with hash '%s' failed: %s", hash, error)
     return createError(
-      error,
+      error as Error,
       `Error from Redis while getting from hash '${hash}'.`
     )
   }
@@ -81,8 +86,10 @@ const itemToArray = (fields: Record<string, unknown>) =>
 
 const setItem = async (
   hmset: HMSet,
+  useTypeAsPrefix: boolean,
   item: Record<string, unknown>,
   id?: string | null,
+  type?: string | string[],
   prefix?: string
 ): Promise<Response> => {
   const { id: itemId, ...fields } = item
@@ -90,7 +97,12 @@ const setItem = async (
   if (typeof id !== 'string') {
     return { status: 'badrequest', error: 'Cannot set data with no id' }
   }
-  const hash = hashFromIdAndPrefix(id, prefix)
+  const itemType = item.$type as string | undefined
+  const hash = hashFromIdAndPrefix(
+    id,
+    useType(useTypeAsPrefix, itemType || type),
+    prefix
+  )
 
   debug("Set to redis id '%s', hash '%s': %o", id, hash, fields)
   try {
@@ -100,7 +112,7 @@ const setItem = async (
   } catch (error) {
     debug("Redis set with hash '%s' failed: %s", hash, error)
     return createError(
-      error,
+      error as Error,
       `Error from Redis while setting on hash '${hash}'.`
     )
   }
@@ -108,7 +120,9 @@ const setItem = async (
 
 const sendSet = async (
   client: redisLib.RedisClient,
+  useTypeAsPrefix: boolean,
   id: string | null | undefined,
+  type: string | string[] | undefined,
   data: unknown,
   prefix?: string,
   concurrency = 1
@@ -126,7 +140,9 @@ const sendSet = async (
   const limit = pLimit(concurrency)
 
   const results = await Promise.all(
-    items.map((item) => limit(() => setItem(hmset, item, id, prefix)))
+    items.map((item) =>
+      limit(() => setItem(hmset, useTypeAsPrefix, item, id, type, prefix))
+    )
   )
 
   const errors = results.filter((result) => result.status !== 'ok')
@@ -156,18 +172,17 @@ export default async function send(
   const {
     type: actionType,
     meta,
-    payload: { data, id },
+    payload: { data, id, type },
   } = action
 
-  const prefix = meta?.options?.prefix
+  const { prefix, concurrency, useTypeAsPrefix = true } = meta?.options || {}
   const client = connection.redisClient
-  const concurrency = meta?.options?.concurrency
 
   if (Array.isArray(id)) {
     return { status: 'badrequest', error: 'Array of ids not supported' }
   }
 
   return actionType === 'SET'
-    ? sendSet(client, id, data, prefix, concurrency)
-    : sendGet(client, id, prefix)
+    ? sendSet(client, useTypeAsPrefix, id, type, data, prefix, concurrency)
+    : sendGet(client, useTypeAsPrefix, id, type, prefix)
 }

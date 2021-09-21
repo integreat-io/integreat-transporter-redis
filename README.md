@@ -48,6 +48,7 @@ Example source configuration:
       prefix: 'store',
       redis: { host: 'localhost', port: 6789 },
       concurrency: 5
+      useTypeAsPrefix: true // Default is `true`
     }
   }]
 }

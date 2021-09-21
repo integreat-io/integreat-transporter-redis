@@ -34,7 +34,7 @@ test('should get data from redis service', async (t) => {
     type: 'GET',
     payload: {
       type: 'meta',
-      id: 'meta:entries',
+      id: 'entries',
       params: {
         keys: ['title', 'description', 'author'],
       },
