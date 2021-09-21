@@ -67,7 +67,42 @@ test('should GET from redis', async (t) => {
   t.deepEqual(redisClient.hgetall.args[0][0], 'meta:entries')
 })
 
-test('should prepend prefix and type to redis hash', async (t) => {
+test('should GET several ids from redis', async (t) => {
+  const redisData0 = [{ title: 'Entry 1' }]
+  const redisData1 = [{ title: 'Entry 2' }]
+  const redisClient = {
+    hgetall: sinon
+      .stub()
+      .yieldsRight(null, [])
+      .onCall(0)
+      .yieldsRight(null, redisData0)
+      .onCall(1)
+      .yieldsRight(null, redisData1),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      id: ['entries', 'users'],
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.hgetall.callCount, 2)
+  t.deepEqual(redisClient.hgetall.args[0][0], 'meta:entries')
+  t.deepEqual(redisClient.hgetall.args[1][0], 'meta:users')
+  const data = ret.data as { title: string }[]
+  t.is(data.length, 2)
+  t.is(data[0].title, 'Entry 1')
+  t.is(data[1].title, 'Entry 2')
+})
+
+test('should prepend prefix to redis hash', async (t) => {
   const redisData = {
     title: 'Entry 1',
     description: 'The first entry',
@@ -174,7 +209,39 @@ test('should return not found for GET with no id', async (t) => {
   t.deepEqual(ret, expected)
 })
 
-test('should respond with badrequest when array of ids', async (t) => {
+test('should return undefined for ids that return no data from redis', async (t) => {
+  const redisData1 = [{ title: 'Entry 2' }]
+  const redisClient = {
+    hgetall: sinon
+      .stub()
+      .yieldsRight(null, [])
+      .onCall(0)
+      .yieldsRight(null, null)
+      .onCall(1)
+      .yieldsRight(null, redisData1),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      id: ['entries', 'users'],
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.hgetall.callCount, 2)
+  const data = ret.data as { title: string }[]
+  t.is(data.length, 2)
+  t.is(data[0], undefined)
+  t.is(data[1].title, 'Entry 2')
+})
+
+test('should return notfound when no ids return data from redis', async (t) => {
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(null, null),
   }
@@ -182,21 +249,23 @@ test('should respond with badrequest when array of ids', async (t) => {
     type: 'GET',
     payload: {
       type: 'meta',
-      id: ['entries', 'other'],
+      id: ['entries', 'users'],
     },
     meta: {
       options: { redis: redisOptions },
     },
   }
   const expected = {
-    status: 'badrequest',
-    error: 'Array of ids not supported',
+    status: 'notfound',
+    error:
+      "Cannot get data. Could not find hash 'meta:entries' | Could not find hash 'meta:users'",
   }
 
   const ret = await send(action, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
-  t.is(redisClient.hgetall.callCount, 0)
+  t.is(redisClient.hgetall.callCount, 2)
+  t.is(ret.data, undefined)
 })
 
 // Tests -- SET
@@ -477,7 +546,7 @@ test('should SET respond with noaction when no data', async (t) => {
 
 // Tests -- error handling
 
-test('should return error when redis throws on get', async (t) => {
+test('should return error when redis throws on GET', async (t) => {
   const redisClient = {
     hgetall: sinon.stub().yieldsRight(new Error('Horror!'), null),
   }
@@ -503,7 +572,64 @@ test('should return error when redis throws on get', async (t) => {
   t.deepEqual(ret, expected)
 })
 
-test('should return error when redis throws on set', async (t) => {
+test('should return error when redis throws on one of more GETs', async (t) => {
+  const redisClient = {
+    hgetall: sinon
+      .stub()
+      .yieldsRight(null, [])
+      .onCall(0)
+      .yieldsRight(new Error('Horror!'), null),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      id: ['entries', 'users'],
+    },
+    meta: {
+      options: {
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'error',
+    error:
+      "Failed to get from Redis. Error from Redis while getting from hash 'meta:entries'. Horror!",
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.deepEqual(ret, expected)
+})
+
+test('should respond with badrequest when array of ids on SET', async (t) => {
+  const redisClient = {
+    hgetall: sinon.stub().yieldsRight(null, null),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      type: 'meta',
+      id: ['entries', 'other'], // Will this every happen?
+      data: [],
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+  const expected = {
+    status: 'badrequest',
+    error: 'Array of ids not supported for SET action',
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.deepEqual(ret, expected)
+  t.is(redisClient.hgetall.callCount, 0)
+})
+
+test('should return error when redis throws on SET', async (t) => {
   const redisClient = {
     hmset: sinon.stub().yieldsRight(new Error('Horror!'), null),
   }
@@ -539,7 +665,7 @@ test('should return error when redis throws on set', async (t) => {
   t.deepEqual(ret, expected)
 })
 
-test('should return error when redis throws on one of more sets', async (t) => {
+test('should return error when redis throws on one of more SETs', async (t) => {
   const redisClient = {
     hmset: sinon
       .stub()

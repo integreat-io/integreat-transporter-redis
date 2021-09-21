@@ -14,6 +14,13 @@ interface HMSet {
 const isObject = (data: unknown): data is Record<string, unknown> =>
   typeof data === 'object' && data !== null
 
+const isErrorResponse = (response: Response) =>
+  typeof response.status === 'string' &&
+  !['ok', 'notfound', 'queued'].includes(response.status)
+
+const joinErrors = (responses: Response[]) =>
+  responses.map((response) => response.error).join(' | ')
+
 const hashFromIdAndPrefix = (id: string, type?: string, prefix?: string) =>
   [prefix, type, id].filter(Boolean).join(':')
 
@@ -49,16 +56,13 @@ const serializeValue = (value: unknown) =>
 const useType = (useTypeAsPrefix: boolean, type?: string | string[]) =>
   useTypeAsPrefix && typeof type === 'string' ? type : undefined
 
-const sendGet = async (
+async function getItem(
   client: redisLib.RedisClient,
   useTypeAsPrefix: boolean,
-  id?: string,
+  id: string,
   type?: string | string[],
   prefix?: string
-) => {
-  if (!id) {
-    return { status: 'notfound', error: 'Cannot get data with no id' }
-  }
+) {
   const hash = hashFromIdAndPrefix(id, useType(useTypeAsPrefix, type), prefix)
   const hgetall = promisify(client.hgetall).bind(client)
 
@@ -75,6 +79,48 @@ const sendGet = async (
       error as Error,
       `Error from Redis while getting from hash '${hash}'.`
     )
+  }
+}
+
+async function sendGet(
+  client: redisLib.RedisClient,
+  useTypeAsPrefix: boolean,
+  id?: string | string[],
+  type?: string | string[],
+  prefix?: string,
+  concurrency = 1
+) {
+  if (!id) {
+    return { status: 'notfound', error: 'Cannot get data with no id' }
+  }
+  if (Array.isArray(id)) {
+    // Sets max concurrency on promises called with `limit()`
+    const limit = pLimit(concurrency)
+
+    const responses = await Promise.all(
+      id.map((id) =>
+        limit(() => getItem(client, useTypeAsPrefix, id, type, prefix))
+      )
+    )
+
+    if (responses.every((response) => response.status === 'notfound')) {
+      return {
+        status: 'notfound',
+        error: `Cannot get data. ${joinErrors(responses)}`,
+      }
+    }
+    const errors = responses.filter(isErrorResponse)
+    if (errors.length > 0) {
+      return {
+        status: 'error',
+        error: `Failed to get from Redis. ${joinErrors(errors)}`,
+      }
+    }
+
+    const data = responses.flatMap((response) => response.data)
+    return { status: 'ok', data }
+  } else {
+    return getItem(client, useTypeAsPrefix, id, type, prefix)
   }
 }
 
@@ -121,12 +167,19 @@ const setItem = async (
 const sendSet = async (
   client: redisLib.RedisClient,
   useTypeAsPrefix: boolean,
-  id: string | null | undefined,
+  id: string | string[] | null | undefined,
   type: string | string[] | undefined,
   data: unknown,
   prefix?: string,
   concurrency = 1
 ) => {
+  if (Array.isArray(id)) {
+    return {
+      status: 'badrequest',
+      error: 'Array of ids not supported for SET action',
+    }
+  }
+
   const items = ([] as unknown[]).concat(data).filter(isObject)
   if (items.length === 0) {
     return { status: 'noaction', error: 'No data to SET' }
@@ -178,11 +231,7 @@ export default async function send(
   const { prefix, concurrency, useTypeAsPrefix = true } = meta?.options || {}
   const client = connection.redisClient
 
-  if (Array.isArray(id)) {
-    return { status: 'badrequest', error: 'Array of ids not supported' }
-  }
-
   return actionType === 'SET'
     ? sendSet(client, useTypeAsPrefix, id, type, data, prefix, concurrency)
-    : sendGet(client, useTypeAsPrefix, id, type, prefix)
+    : sendGet(client, useTypeAsPrefix, id, type, prefix, concurrency)
 }
