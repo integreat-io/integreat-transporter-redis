@@ -102,6 +102,69 @@ test('should GET several ids from redis', async (t) => {
   t.is(data[1].title, 'Entry 2')
 })
 
+test('should GET collection from redis', async (t) => {
+  const redisData0 = [{ title: 'Entry 1' }]
+  const redisData1 = [{ title: 'Entry 2' }]
+  const redisClient = {
+    hgetall: sinon
+      .stub()
+      .yieldsRight(null, [])
+      .onCall(0)
+      .yieldsRight(null, redisData0)
+      .onCall(1)
+      .yieldsRight(null, redisData1),
+    keys: sinon.stub().yieldsRight(null, ['meta:entries', 'meta:users']),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      // No id => collection
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.keys.callCount, 1)
+  t.is(redisClient.keys.args[0][0], 'meta:*')
+  t.is(redisClient.hgetall.callCount, 2)
+  t.is(redisClient.hgetall.args[0][0], 'meta:entries')
+  t.is(redisClient.hgetall.args[1][0], 'meta:users')
+  const data = ret.data as { title: string }[]
+  t.is(data.length, 2)
+  t.is(data[0].title, 'Entry 1')
+  t.is(data[1].title, 'Entry 2')
+})
+
+test('should return empty error when GET collection yields no ids from redis', async (t) => {
+  const redisClient = {
+    hgetall: sinon.stub().yieldsRight(null, null),
+    keys: sinon.stub().yieldsRight(null, []),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      // No id => collection
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.keys.callCount, 1)
+  t.is(redisClient.keys.args[0][0], 'meta:*')
+  t.is(redisClient.hgetall.callCount, 0)
+  t.deepEqual(ret.data, [])
+})
+
 test('should prepend prefix to redis hash', async (t) => {
   const redisData = {
     title: 'Entry 1',
@@ -177,31 +240,6 @@ test('should return not found for GET on empty data', async (t) => {
   const expected = {
     status: 'notfound',
     error: "Could not find hash 'meta:entries'",
-  }
-
-  const ret = await send(action, wrapInConnection(redisClient))
-
-  t.deepEqual(ret, expected)
-})
-
-test('should return not found for GET with no id', async (t) => {
-  const redisClient = {
-    hgetall: sinon.stub().yieldsRight(null, null),
-  }
-  const action = {
-    type: 'GET',
-    payload: {
-      type: 'meta',
-    },
-    meta: {
-      options: {
-        redis: redisOptions,
-      },
-    },
-  }
-  const expected = {
-    status: 'notfound',
-    error: 'Cannot get data with no id',
   }
 
   const ret = await send(action, wrapInConnection(redisClient))
@@ -601,6 +639,31 @@ test('should return error when redis throws on one of more GETs', async (t) => {
   const ret = await send(action, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
+})
+
+test('should return error when getting ids from redis fails', async (t) => {
+  const redisClient = {
+    hgetall: sinon.stub().yieldsRight(null, null),
+    keys: sinon.stub().yieldsRight(new Error('Oh no!'), null),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      // No id => collection
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'error', ret.error)
+  t.is(ret.error, 'Could not get collection from Redis. Error: Oh no!')
+  t.is(ret.data, undefined)
+  t.is(redisClient.keys.callCount, 1)
+  t.is(redisClient.hgetall.callCount, 0)
 })
 
 test('should respond with badrequest when array of ids on SET', async (t) => {

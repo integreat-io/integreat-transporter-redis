@@ -56,6 +56,30 @@ const serializeValue = (value: unknown) =>
 const useType = (useTypeAsPrefix: boolean, type?: string | string[]) =>
   useTypeAsPrefix && typeof type === 'string' ? type : undefined
 
+async function getIds(
+  client: redisLib.RedisClient,
+  useTypeAsPrefix: boolean,
+  type?: string | string[],
+  prefix?: string
+) {
+  const hashPattern = hashFromIdAndPrefix(
+    '*',
+    useType(useTypeAsPrefix, type),
+    prefix
+  )
+  const getKeys = promisify(client.keys).bind(client)
+
+  debug("Get from redis key pattern '%s'.", hashPattern)
+  try {
+    const ids = await getKeys(hashPattern)
+    debug("Redis get with key pattern '%s' returned %o", hashPattern, ids)
+    return ids
+  } catch (error) {
+    debug("Redis get with key pattern '%s' failed: %s", hashPattern, error)
+    throw error
+  }
+}
+
 async function getItem(
   client: redisLib.RedisClient,
   useTypeAsPrefix: boolean,
@@ -89,10 +113,25 @@ async function sendGet(
   type?: string | string[],
   prefix?: string,
   concurrency = 1
-) {
+): Promise<Response> {
+  // Collection
   if (!id) {
-    return { status: 'notfound', error: 'Cannot get data with no id' }
+    let ids: string[] = []
+    try {
+      ids = await getIds(client, useTypeAsPrefix, type, prefix)
+    } catch (error) {
+      return {
+        status: 'error',
+        error: `Could not get collection from Redis. ${error}`,
+      }
+    }
+    if (ids.length === 0) {
+      return { status: 'ok', data: [] }
+    }
+    return sendGet(client, false, ids, type, undefined, concurrency)
   }
+
+  // Members
   if (Array.isArray(id)) {
     // Sets max concurrency on promises called with `limit()`
     const limit = pLimit(concurrency)
@@ -119,9 +158,10 @@ async function sendGet(
 
     const data = responses.flatMap((response) => response.data)
     return { status: 'ok', data }
-  } else {
-    return getItem(client, useTypeAsPrefix, id, type, prefix)
   }
+
+  // Member
+  return getItem(client, useTypeAsPrefix, id, type, prefix)
 }
 
 const itemToArray = (fields: Record<string, unknown>) =>
