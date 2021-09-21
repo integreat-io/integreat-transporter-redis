@@ -11,6 +11,11 @@ interface HMSet {
   (hash: string, fields: string[]): Promise<string>
 }
 
+type IdTypeTuple = [string, string | undefined]
+
+const isIdTypeTuple = (value: unknown): value is IdTypeTuple =>
+  Array.isArray(value)
+
 const isObject = (data: unknown): data is Record<string, unknown> =>
   typeof data === 'object' && data !== null
 
@@ -170,14 +175,14 @@ const itemToArray = (fields: Record<string, unknown>) =>
     [] as string[]
   )
 
-const setItem = async (
+async function setItem(
   hmset: HMSet,
   useTypeAsPrefix: boolean,
   item: Record<string, unknown>,
   id?: string | null,
   type?: string | string[],
   prefix?: string
-): Promise<Response> => {
+): Promise<Response> {
   const { id: itemId, ...fields } = item
   id = (itemId as string | null | undefined) || id
   if (typeof id !== 'string') {
@@ -204,7 +209,7 @@ const setItem = async (
   }
 }
 
-const sendSet = async (
+async function sendSet(
   client: redisLib.RedisClient,
   useTypeAsPrefix: boolean,
   id: string | string[] | null | undefined,
@@ -212,7 +217,7 @@ const sendSet = async (
   data: unknown,
   prefix?: string,
   concurrency = 1
-) => {
+) {
   if (Array.isArray(id)) {
     return {
       status: 'badrequest',
@@ -252,6 +257,56 @@ const sendSet = async (
   }
 }
 
+const idAndTypeFromItem = (item: unknown) =>
+  isObject(item) ? [item.id, item.$type] : undefined
+
+const extractIdsAndTypeFromData = (
+  data: unknown
+): [string, string | undefined][] =>
+  (Array.isArray(data)
+    ? data.map(idAndTypeFromItem)
+    : [idAndTypeFromItem(data)]
+  ).filter(isIdTypeTuple)
+
+async function sendDel(
+  client: redisLib.RedisClient,
+  useTypeAsPrefix: boolean,
+  id: string | string[] | null | undefined,
+  type: string | string[] | undefined,
+  data: unknown,
+  prefix?: string
+) {
+  let idTypes: IdTypeTuple[] = extractIdsAndTypeFromData(data).filter(Boolean)
+  if (idTypes.length === 0 && id) {
+    idTypes = Array.isArray(id)
+      ? id.map((id) => (id ? [id, undefined] : undefined)).filter(isIdTypeTuple)
+      : [[id, undefined]]
+  }
+
+  if (idTypes.length === 0) {
+    return { status: 'noaction', error: 'No ids to delete' }
+  }
+
+  const keys = idTypes.map(([id, itemType]) =>
+    hashFromIdAndPrefix(id, useType(useTypeAsPrefix, itemType || type), prefix)
+  )
+
+  const deleteKey = promisify<string[]>(client.del).bind(client)
+
+  debug("Delete hashes '%s' from Redis", keys)
+  try {
+    const ret = await deleteKey(keys)
+    debug("Redis deleted hashes '%s' returned %o", keys, ret)
+    return { status: 'ok', data: null }
+  } catch (error) {
+    debug("Failed to delete hashes '%s' from Redis: %s", keys, error)
+    return createError(
+      error as Error,
+      `Error from Redis while deleting hashes '${keys.join("', '")}'.`
+    )
+  }
+}
+
 export default async function send(
   action: Action,
   connection: Connection | null
@@ -271,7 +326,22 @@ export default async function send(
   const { prefix, concurrency, useTypeAsPrefix = true } = meta?.options || {}
   const client = connection.redisClient
 
-  return actionType === 'SET'
-    ? sendSet(client, useTypeAsPrefix, id, type, data, prefix, concurrency)
-    : sendGet(client, useTypeAsPrefix, id, type, prefix, concurrency)
+  switch (actionType) {
+    case 'GET':
+      return sendGet(client, useTypeAsPrefix, id, type, prefix, concurrency)
+    case 'SET':
+      return sendSet(
+        client,
+        useTypeAsPrefix,
+        id,
+        type,
+        data,
+        prefix,
+        concurrency
+      )
+    case 'DELETE':
+      return sendDel(client, useTypeAsPrefix, id, type, data, prefix)
+    default:
+      return { status: 'badrequest', error: `Unknown action '${actionType}'` }
+  }
 }

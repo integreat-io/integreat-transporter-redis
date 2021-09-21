@@ -582,6 +582,152 @@ test('should SET respond with noaction when no data', async (t) => {
   t.is(redisClient.hmset.callCount, 0)
 })
 
+// Tests -- delete
+
+test('should DELETE several data items from redis', async (t) => {
+  const redisClient = {
+    del: sinon.stub().yieldsRight(null, 2),
+  }
+  const action = {
+    type: 'DELETE',
+    payload: {
+      type: 'meta',
+      data: [
+        {
+          id: 'ent1',
+          title: 'Entry 1',
+          description: 'The first entry',
+        },
+        {
+          id: 'ent2',
+          title: 'Entry 2',
+          description: 'The second entry',
+        },
+      ],
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.del.callCount, 1)
+  t.deepEqual(redisClient.del.args[0][0], [
+    'store:meta:ent1',
+    'store:meta:ent2',
+  ])
+})
+
+test('should DELETE one data item from redis', async (t) => {
+  const redisClient = {
+    del: sinon.stub().yieldsRight(null, 2),
+  }
+  const action = {
+    type: 'DELETE',
+    payload: {
+      type: 'meta',
+      data: {
+        id: 'ent1',
+        title: 'Entry 1',
+        description: 'The first entry',
+      },
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.del.callCount, 1)
+  t.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
+})
+
+test('should DELETE several ids from redis', async (t) => {
+  const redisClient = {
+    del: sinon.stub().yieldsRight(null, 2),
+  }
+  const action = {
+    type: 'DELETE',
+    payload: {
+      type: 'meta',
+      id: ['ent1', 'ent2'],
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.del.callCount, 1)
+  t.deepEqual(redisClient.del.args[0][0], [
+    'store:meta:ent1',
+    'store:meta:ent2',
+  ])
+})
+
+test('should DELETE noe id from redis', async (t) => {
+  const redisClient = {
+    del: sinon.stub().yieldsRight(null, 2),
+  }
+  const action = {
+    type: 'DELETE',
+    payload: {
+      type: 'meta',
+      id: 'ent1',
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.del.callCount, 1)
+  t.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
+})
+
+test('should do nothing when DELETE has no ids', async (t) => {
+  const redisClient = {
+    del: sinon.stub().yieldsRight(null, 2),
+  }
+  const action = {
+    type: 'DELETE',
+    payload: {
+      type: 'meta',
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'noaction', ret.error)
+  t.is(redisClient.del.callCount, 0)
+})
+
 // Tests -- error handling
 
 test('should return error when redis throws on GET', async (t) => {
@@ -831,6 +977,30 @@ test('should return error when no options', async (t) => {
   }
 
   const ret = await send(action, connection)
+
+  t.deepEqual(ret, expected)
+})
+
+test('should return badrequest when unknown action', async (t) => {
+  const redisClient = {
+    hgetall: sinon.stub().yieldsRight(null, null),
+  }
+  const action = {
+    type: 'UNKNOWN',
+    payload: {
+      type: 'meta',
+      id: 'meta:entries',
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+  const expected = {
+    status: 'badrequest',
+    error: "Unknown action 'UNKNOWN'",
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
 
   t.deepEqual(ret, expected)
 })
