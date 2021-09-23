@@ -135,9 +135,11 @@ test('should GET collection from redis', async (t) => {
   t.is(redisClient.hgetall.callCount, 2)
   t.is(redisClient.hgetall.args[0][0], 'meta:entries')
   t.is(redisClient.hgetall.args[1][0], 'meta:users')
-  const data = ret.data as { title: string }[]
+  const data = ret.data as { id: string; title: string }[]
   t.is(data.length, 2)
+  t.is(data[0].id, 'entries')
   t.is(data[0].title, 'Entry 1')
+  t.is(data[1].id, 'users')
   t.is(data[1].title, 'Entry 2')
 })
 

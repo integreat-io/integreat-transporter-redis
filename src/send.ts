@@ -10,6 +10,11 @@ const debug = debugFn('great:adapter:redis')
 interface HMSet {
   (hash: string, fields: string[]): Promise<string>
 }
+interface HMGetAll {
+  (hash: string): Promise<{
+    [key: string]: string
+  }>
+}
 
 type IdTypeTuple = [string, string | undefined]
 
@@ -72,13 +77,14 @@ async function getIds(
     useType(useTypeAsPrefix, type),
     prefix
   )
+  const prefixLength = hashPattern.length - 1
   const getKeys = promisify(client.keys).bind(client)
 
   debug("Get from redis key pattern '%s'.", hashPattern)
   try {
     const ids = await getKeys(hashPattern)
     debug("Redis get with key pattern '%s' returned %o", hashPattern, ids)
-    return ids
+    return ids.map((id) => id.slice(prefixLength))
   } catch (error) {
     debug("Redis get with key pattern '%s' failed: %s", hashPattern, error)
     throw error
@@ -86,14 +92,13 @@ async function getIds(
 }
 
 async function getItem(
-  client: redisLib.RedisClient,
+  hgetall: HMGetAll,
   useTypeAsPrefix: boolean,
   id: string,
   type?: string | string[],
   prefix?: string
 ) {
   const hash = hashFromIdAndPrefix(id, useType(useTypeAsPrefix, type), prefix)
-  const hgetall = promisify(client.hgetall).bind(client)
 
   debug("Get from redis id '%s', hash '%s'.", id, hash)
   try {
@@ -133,8 +138,10 @@ async function sendGet(
     if (ids.length === 0) {
       return { status: 'ok', data: [] }
     }
-    return sendGet(client, false, ids, type, undefined, concurrency)
+    return sendGet(client, useTypeAsPrefix, ids, type, prefix, concurrency)
   }
+
+  const hgetall = promisify(client.hgetall).bind(client)
 
   // Members
   if (Array.isArray(id)) {
@@ -143,7 +150,7 @@ async function sendGet(
 
     const responses = await Promise.all(
       id.map((id) =>
-        limit(() => getItem(client, useTypeAsPrefix, id, type, prefix))
+        limit(() => getItem(hgetall, useTypeAsPrefix, id, type, prefix))
       )
     )
 
@@ -166,7 +173,7 @@ async function sendGet(
   }
 
   // Member
-  return getItem(client, useTypeAsPrefix, id, type, prefix)
+  return getItem(hgetall, useTypeAsPrefix, id, type, prefix)
 }
 
 const itemToArray = (fields: Record<string, unknown>) =>
