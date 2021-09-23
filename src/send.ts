@@ -36,15 +36,15 @@ const createError = (error: Error, message: string) => ({
 
 function normalizeValue(value: string) {
   try {
-    return JSON.parse(value)
+    return value === '##null##' ? null : JSON.parse(value)
   } catch (err) {
     return value
   }
 }
 
-const normalizeData = (data: Record<string, string>) =>
+const normalizeData = (id: string) => (data: Record<string, string>) =>
   Object.entries(data).reduce(
-    (data, [key, value]) => ({ ...data, [key]: normalizeValue(value) }),
+    (data, [key, value]) => ({ id, ...data, [key]: normalizeValue(value) }),
     {}
   )
 
@@ -52,8 +52,8 @@ const serializeObject = (value: Record<string, unknown>) =>
   value instanceof Date ? value.toISOString() : JSON.stringify(value)
 
 const serializeValue = (value: unknown) =>
-  value === null || typeof value === 'undefined'
-    ? ''
+  value === null
+    ? '##null##'
     : isObject(value)
     ? serializeObject(value)
     : String(value)
@@ -100,7 +100,7 @@ async function getItem(
     const responseData = await hgetall(hash)
     debug("Redis get with hash '%s' returned %o", hash, responseData)
     return responseData && Object.keys(responseData).length > 0
-      ? { status: 'ok', data: mapAny(normalizeData, responseData) }
+      ? { status: 'ok', data: mapAny(normalizeData(id), responseData) }
       : { status: 'notfound', error: `Could not find hash '${hash}'` }
   } catch (error) {
     debug("Redis get with hash '%s' failed: %s", hash, error)
@@ -171,7 +171,8 @@ async function sendGet(
 
 const itemToArray = (fields: Record<string, unknown>) =>
   Object.entries(fields).reduce(
-    (arr, [key, value]) => [...arr, key, serializeValue(value)],
+    (arr, [key, value]) =>
+      value === undefined ? arr : [...arr, key, serializeValue(value)],
     [] as string[]
   )
 

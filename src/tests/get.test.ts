@@ -10,6 +10,7 @@ test('should get data from redis service', async (t) => {
   const redisData = {
     title: 'Entry 1',
     description: 'The first entry',
+    publishedAt: '##null##',
     author: JSON.stringify({ id: 'johnf', name: 'John F.' }),
   }
   const redisClient = {
@@ -36,7 +37,7 @@ test('should get data from redis service', async (t) => {
       type: 'meta',
       id: 'entries',
       params: {
-        keys: ['title', 'description', 'author'],
+        keys: ['title', 'description', 'publishedAt', 'author'],
       },
     },
     meta: {
@@ -44,8 +45,10 @@ test('should get data from redis service', async (t) => {
     },
   }
   const expectedData = {
+    id: 'entries',
     title: 'Entry 1',
     description: 'The first entry',
+    publishedAt: null,
     author: { id: 'johnf', name: 'John F.' },
   }
 

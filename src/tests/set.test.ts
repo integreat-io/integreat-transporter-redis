@@ -31,6 +31,9 @@ test('should set data to redis service', async (t) => {
     id: 'ent1',
     title: 'Entry 1',
     description: 'The first entry',
+    section: undefined,
+    createdAt: new Date('2021-09-05T18:43:11Z'),
+    publishedAt: null,
     author: { id: 'johnf', name: 'John F.' },
   }
   const options = {
@@ -45,7 +48,14 @@ test('should set data to redis service', async (t) => {
       type: 'meta',
       data,
       params: {
-        keys: ['title', 'description', 'author'],
+        keys: [
+          'title',
+          'description',
+          'author',
+          'section',
+          'createdAt',
+          'publishedAt',
+        ],
       },
     },
     meta: { options },
@@ -55,6 +65,10 @@ test('should set data to redis service', async (t) => {
     'Entry 1',
     'description',
     'The first entry',
+    'createdAt',
+    '2021-09-05T18:43:11.000Z',
+    'publishedAt',
+    '##null##',
     'author',
     JSON.stringify({ id: 'johnf', name: 'John F.' }),
   ]

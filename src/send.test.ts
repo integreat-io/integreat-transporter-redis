@@ -27,7 +27,7 @@ test('should GET from redis', async (t) => {
       updateCount: '3',
       draft: 'false',
       missing: '',
-      nil: '',
+      nil: '##null##',
       createdAt: '2019-01-31T18:43:11.000Z',
     },
   ]
@@ -38,7 +38,7 @@ test('should GET from redis', async (t) => {
     type: 'GET',
     payload: {
       type: 'meta',
-      id: 'entries',
+      id: 'ent1',
     },
     meta: {
       options: { redis: redisOptions },
@@ -48,13 +48,14 @@ test('should GET from redis', async (t) => {
     status: 'ok',
     data: [
       {
+        id: 'ent1',
         title: 'Entry 1',
         description: 'The first entry',
         author: { id: 'johnf', name: 'John F.' },
         updateCount: 3,
         draft: false,
         missing: '',
-        nil: '',
+        nil: null,
         createdAt: '2019-01-31T18:43:11.000Z',
       },
     ],
@@ -64,7 +65,7 @@ test('should GET from redis', async (t) => {
 
   t.deepEqual(ret, expected)
   t.is(redisClient.hgetall.callCount, 1)
-  t.deepEqual(redisClient.hgetall.args[0][0], 'meta:entries')
+  t.deepEqual(redisClient.hgetall.args[0][0], 'meta:ent1')
 })
 
 test('should GET several ids from redis', async (t) => {
@@ -350,10 +351,8 @@ test('should SET to redis', async (t) => {
     '3',
     'draft',
     'false',
-    'missing',
-    '',
     'nil',
-    '',
+    '##null##',
     'createdAt',
     '2019-01-31T18:43:11.000Z',
   ]
