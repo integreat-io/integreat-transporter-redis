@@ -56,8 +56,8 @@ export default function connect(redis: Redis) {
       const client = redis.createClient(options.redis)
       const connection = wrapInOk(client, options.connectionTimeout)
 
-      client.on('error', () => {
-        debug('Redis error. Disconnecting')
+      client.on('error', (err) => {
+        debug(`Disconnecting. Redis error: ${err}`)
         return disconnect(connection)
       })
 
