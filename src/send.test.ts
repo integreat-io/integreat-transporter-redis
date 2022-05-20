@@ -276,10 +276,10 @@ test('should return undefined for ids that return no data from redis', async (t)
 
   t.is(ret.status, 'ok', ret.error)
   t.is(redisClient.hgetall.callCount, 2)
-  const data = ret.data as { title: string }[]
+  const data = ret.data as ({ title: string } | undefined)[]
   t.is(data.length, 2)
   t.is(data[0], undefined)
-  t.is(data[1].title, 'Entry 2')
+  t.is(data[1]?.title, 'Entry 2')
 })
 
 test('should return notfound when no ids return data from redis', async (t) => {
