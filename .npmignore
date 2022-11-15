@@ -6,3 +6,4 @@ coverage
 .*
 tsconfig.json
 tslint.json
+*.config.cjs
