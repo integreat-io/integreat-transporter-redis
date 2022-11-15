@@ -17,6 +17,7 @@ export interface Payload extends Record<string, unknown> {
   type?: string | string[]
   id?: string | string[]
   data?: unknown
+  pattern?: string
   params?: Record<string, unknown>
 }
 

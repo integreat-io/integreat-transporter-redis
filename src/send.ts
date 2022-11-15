@@ -8,6 +8,10 @@ const debug = debugFn('integreat:transporter:redis')
 
 type IdTypeTuple = [string, string | undefined]
 
+interface GenerateId {
+  (id: string, type?: string): string
+}
+
 const isIdTypeTuple = (value: unknown): value is IdTypeTuple =>
   Array.isArray(value)
 
@@ -21,13 +25,21 @@ const isErrorResponse = (response: Response) =>
 const joinErrors = (responses: Response[]) =>
   responses.map((response) => response.error).join(' | ')
 
-const hashFromIdAndPrefix = (id: string, type?: string, prefix?: string) =>
-  [prefix, type, id].filter(Boolean).join(':')
+const combineHashParts = (...parts: (string | undefined)[]) =>
+  parts.filter(Boolean).join(':')
 
 const createError = (error: Error, message: string) => ({
   status: 'error',
   error: `${message} ${error.message}`,
 })
+
+const useType = (useTypeAsPrefix: boolean, type?: string | string[]) =>
+  useTypeAsPrefix && typeof type === 'string' ? type : undefined
+
+const generateId =
+  (prefix?: string, type?: string | string[], useTypeAsPrefix = true) =>
+  (id: string, idType?: string) =>
+    combineHashParts(prefix, useType(useTypeAsPrefix, idType || type), id)
 
 function normalizeValue(value: string) {
   try {
@@ -53,41 +65,32 @@ const serializeValue = (value: unknown) =>
     ? serializeObject(value)
     : String(value)
 
-const useType = (useTypeAsPrefix: boolean, type?: string | string[]) =>
-  useTypeAsPrefix && typeof type === 'string' ? type : undefined
-
 async function getIds(
   client: ReturnType<typeof createClient>,
-  useTypeAsPrefix: boolean,
-  type?: string | string[],
-  prefix?: string
+  generateId: GenerateId,
+  pattern?: string
 ) {
-  const hashPattern = hashFromIdAndPrefix(
-    '*',
-    useType(useTypeAsPrefix, type),
-    prefix
-  )
-  const prefixLength = hashPattern.length - 1
+  const idPattern = combineHashParts(pattern, '*')
+  const findHash = generateId(idPattern)
+  const prefixLength = findHash.length - idPattern.length
 
-  debug("Get from redis key pattern '%s'.", hashPattern)
+  debug("Get from redis key pattern '%s'.", findHash)
   try {
-    const ids = await client.keys(hashPattern)
-    debug("Redis get with key pattern '%s' returned %o", hashPattern, ids)
+    const ids = await client.keys(findHash)
+    debug("Redis get with key pattern '%s' returned %o", findHash, ids)
     return ids.map((id) => id.slice(prefixLength))
   } catch (error) {
-    debug("Redis get with key pattern '%s' failed: %s", hashPattern, error)
+    debug("Redis get with key pattern '%s' failed: %s", findHash, error)
     throw error
   }
 }
 
 async function getItem(
   client: ReturnType<typeof createClient>,
-  useTypeAsPrefix: boolean,
-  id: string,
-  type?: string | string[],
-  prefix?: string
+  generateId: GenerateId,
+  id: string
 ) {
-  const hash = hashFromIdAndPrefix(id, useType(useTypeAsPrefix, type), prefix)
+  const hash = generateId(id)
 
   debug("Get from redis id '%s', hash '%s'.", id, hash)
   try {
@@ -107,17 +110,16 @@ async function getItem(
 
 async function sendGet(
   client: ReturnType<typeof createClient>,
-  useTypeAsPrefix: boolean,
+  generateId: GenerateId,
   id?: string | string[],
-  type?: string | string[],
-  prefix?: string,
+  pattern?: string,
   concurrency = 1
 ): Promise<Response> {
   // Collection
   if (!id) {
     let ids: string[] = []
     try {
-      ids = await getIds(client, useTypeAsPrefix, type, prefix)
+      ids = await getIds(client, generateId, pattern)
     } catch (error) {
       return {
         status: 'error',
@@ -127,7 +129,7 @@ async function sendGet(
     if (ids.length === 0) {
       return { status: 'ok', data: [] }
     }
-    return sendGet(client, useTypeAsPrefix, ids, type, prefix, concurrency)
+    return sendGet(client, generateId, ids, undefined, concurrency)
   }
 
   // Members
@@ -136,9 +138,7 @@ async function sendGet(
     const limit = pLimit(concurrency)
 
     const responses = await Promise.all(
-      id.map((id) =>
-        limit(() => getItem(client, useTypeAsPrefix, id, type, prefix))
-      )
+      id.map((id) => limit(() => getItem(client, generateId, id)))
     )
 
     if (responses.every((response) => response.status === 'notfound')) {
@@ -160,7 +160,7 @@ async function sendGet(
   }
 
   // Member
-  return getItem(client, useTypeAsPrefix, id, type, prefix)
+  return getItem(client, generateId, id)
 }
 
 const itemToArray = (fields: Record<string, unknown>) =>
@@ -172,11 +172,9 @@ const itemToArray = (fields: Record<string, unknown>) =>
 
 async function setItem(
   client: ReturnType<typeof createClient>,
-  useTypeAsPrefix: boolean,
+  generateId: GenerateId,
   item: Record<string, unknown>,
-  id?: string | null,
-  type?: string | string[],
-  prefix?: string
+  id?: string | null
 ): Promise<Response> {
   const { id: itemId, ...fields } = item
   id = (itemId as string | null | undefined) || id
@@ -184,11 +182,7 @@ async function setItem(
     return { status: 'badrequest', error: 'Cannot set data with no id' }
   }
   const itemType = item.$type as string | undefined
-  const hash = hashFromIdAndPrefix(
-    id,
-    useType(useTypeAsPrefix, itemType || type),
-    prefix
-  )
+  const hash = generateId(id, itemType)
 
   debug("Set to redis id '%s', hash '%s': %o", id, hash, fields)
   try {
@@ -206,11 +200,9 @@ async function setItem(
 
 async function sendSet(
   client: ReturnType<typeof createClient>,
-  useTypeAsPrefix: boolean,
+  generateId: GenerateId,
   id: string | string[] | null | undefined,
-  type: string | string[] | undefined,
   data: unknown,
-  prefix?: string,
   concurrency = 1
 ) {
   if (Array.isArray(id)) {
@@ -229,9 +221,7 @@ async function sendSet(
   const limit = pLimit(concurrency)
 
   const results = await Promise.all(
-    items.map((item) =>
-      limit(() => setItem(client, useTypeAsPrefix, item, id, type, prefix))
-    )
+    items.map((item) => limit(() => setItem(client, generateId, item, id)))
   )
 
   const errors = results.filter((result) => result.status !== 'ok')
@@ -261,11 +251,9 @@ const extractIdsAndTypeFromData = (
 
 async function sendDel(
   client: ReturnType<typeof createClient>,
-  useTypeAsPrefix: boolean,
+  generateId: GenerateId,
   id: string | string[] | null | undefined,
-  type: string | string[] | undefined,
-  data: unknown,
-  prefix?: string
+  data: unknown
 ) {
   let idTypes: IdTypeTuple[] = extractIdsAndTypeFromData(data).filter(Boolean)
   if (idTypes.length === 0 && id) {
@@ -278,9 +266,7 @@ async function sendDel(
     return { status: 'noaction', error: 'No ids to delete' }
   }
 
-  const keys = idTypes.map(([id, itemType]) =>
-    hashFromIdAndPrefix(id, useType(useTypeAsPrefix, itemType || type), prefix)
-  )
+  const keys = idTypes.map(([id, itemType]) => generateId(id, itemType))
 
   debug("Delete hashes '%s' from Redis", keys)
   try {
@@ -309,27 +295,21 @@ export default async function send(
   const {
     type: actionType,
     meta,
-    payload: { data, id, type },
+    payload: { data, id, type, pattern },
   } = action
 
   const { prefix, concurrency, useTypeAsPrefix = true } = meta?.options || {}
   const client = connection.redisClient
 
+  const generateIdFn = generateId(prefix, type, useTypeAsPrefix)
+
   switch (actionType) {
     case 'GET':
-      return sendGet(client, useTypeAsPrefix, id, type, prefix, concurrency)
+      return sendGet(client, generateIdFn, id, pattern, concurrency)
     case 'SET':
-      return sendSet(
-        client,
-        useTypeAsPrefix,
-        id,
-        type,
-        data,
-        prefix,
-        concurrency
-      )
+      return sendSet(client, generateIdFn, id, data, concurrency)
     case 'DELETE':
-      return sendDel(client, useTypeAsPrefix, id, type, data, prefix)
+      return sendDel(client, generateIdFn, id, data)
     default:
       return { status: 'badrequest', error: `Unknown action '${actionType}'` }
   }
