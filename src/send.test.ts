@@ -143,6 +143,46 @@ test('should GET collection from redis', async (t) => {
   t.is(data[1].title, 'Entry 2')
 })
 
+test('should GET collection from redis with prefix as wildcard', async (t) => {
+  const redisData0 = [{ title: 'Entry 1' }]
+  const redisData1 = [{ title: 'Entry 2' }]
+  const redisClient = {
+    hGetAll: sinon
+      .stub()
+      .resolves([])
+      .onCall(0)
+      .resolves(redisData0)
+      .onCall(1)
+      .resolves(redisData1),
+    keys: sinon.stub().resolves(['store:meta:entries', 'store:meta:users']),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      // No id => collection
+    },
+    meta: {
+      options: { prefix: 'store', redis: redisOptions },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.keys.callCount, 1)
+  t.is(redisClient.keys.args[0][0], 'store:meta:*')
+  t.is(redisClient.hGetAll.callCount, 2)
+  t.is(redisClient.hGetAll.args[0][0], 'store:meta:entries')
+  t.is(redisClient.hGetAll.args[1][0], 'store:meta:users')
+  const data = ret.data as { id: string; title: string }[]
+  t.is(data.length, 2)
+  t.is(data[0].id, 'entries')
+  t.is(data[0].title, 'Entry 1')
+  t.is(data[1].id, 'users')
+  t.is(data[1].title, 'Entry 2')
+})
+
 test('should return empty error when GET collection yields no ids from redis', async (t) => {
   const redisClient = {
     hGetAll: sinon.stub().resolves(null),
@@ -681,7 +721,7 @@ test('should DELETE several ids from redis', async (t) => {
   ])
 })
 
-test('should DELETE noe id from redis', async (t) => {
+test('should DELETE one id from redis', async (t) => {
   const redisClient = {
     del: sinon.stub().resolves(2),
   }
