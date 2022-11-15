@@ -27,11 +27,15 @@ npm install integreat-transporter-redis
 Example of use:
 
 ```javascript
-import integreat from 'integreat'
+import Integreat, { authenticators, transformers } from 'integreat'
 import redis from 'integreat-transporter-redis'
 import defs from './config'
 
-const resources = integreat.resources({ transporters: { redis: redis } })
+const resources = {
+  authenticators,
+  transformers,
+  transporters: { redis: redis },
+}
 const great = Integreat.create(defs, resources)
 
 // ... and then dispatch actions as usual
@@ -46,7 +50,7 @@ Example source configuration:
   endpoints: [{
     options: {
       prefix: 'store',
-      redis: { host: 'localhost', port: 6789 },
+      redis: { url: 'redis://localhost:6379' },
       concurrency: 5
       useTypeAsPrefix: true // Default is `true`
     }
@@ -55,7 +59,7 @@ Example source configuration:
 ```
 
 The `redis` endpoint options are sent as-is to `redis.createClient()`.
-[See node_redis documentation for options](https://github.com/NodeRedis/node_redis#options-object-properties).
+[See node_redis documentation for options](https://github.com/redis/node-redis/blob/d09732280b1ed1e41cb53b687ed04a6be0fff8ab/docs/client-configuration.md).
 
 ### Running the tests
 
