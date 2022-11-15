@@ -1,5 +1,6 @@
 import test from 'ava'
 import sinon = require('sinon')
+import { createClient } from 'redis'
 
 import connect from '../connect'
 import redisTransporter from '..'
@@ -16,16 +17,15 @@ const generateData = (count: number) =>
 
 test('should set data to redis service', async (t) => {
   const redisClient = {
-    hmset: sinon.stub().yieldsRight(null, 'OK'),
-    quit: sinon.stub().yieldsRight(null),
+    connect: async () => undefined,
+    hSet: sinon.stub().resolves('OK'),
+    quit: sinon.stub().resolves(),
     on: () => redisClient,
   }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient),
-  }
+  const createRedis = () => redisClient
   const transporter = {
     ...redisTransporter,
-    connect: connect(redis),
+    connect: connect(createRedis as unknown as typeof createClient),
   }
   const data = {
     id: 'ent1',
@@ -79,21 +79,20 @@ test('should set data to redis service', async (t) => {
 
   t.is(ret.status, 'ok')
   t.is(ret.data, null)
-  t.is(redisClient.hmset.args[0][0], 'store:meta:ent1')
-  t.deepEqual(redisClient.hmset.args[0][1], expectedData)
+  t.is(redisClient.hSet.args[0][0], 'store:meta:ent1')
+  t.deepEqual(redisClient.hSet.args[0][1], expectedData)
 })
 
 test('should set data array to redis service', async (t) => {
   const redisClient = {
-    hmset: sinon.stub().yieldsRight(null, 'OK'),
-    quit: sinon.stub().yieldsRight(null),
+    connect: async () => undefined,
+    hSet: sinon.stub().resolves('OK'),
+    quit: sinon.stub().resolves(),
     on: () => redisClient,
   }
   const transporter = {
     ...redisTransporter,
-    connect: connect({
-      createClient: sinon.stub().returns(redisClient),
-    }),
+    connect: connect((() => redisClient) as unknown as typeof createClient),
   }
   const options = {
     prefix: 'store',
@@ -115,7 +114,7 @@ test('should set data array to redis service', async (t) => {
 
   t.is(ret.status, 'ok')
   t.is(ret.data, null)
-  t.is(redisClient.hmset.callCount, 50)
-  t.is(redisClient.hmset.args[0][0], 'store:meta:ent1')
-  t.is(redisClient.hmset.args[49][0], 'store:meta:ent50')
+  t.is(redisClient.hSet.callCount, 50)
+  t.is(redisClient.hSet.args[0][0], 'store:meta:ent1')
+  t.is(redisClient.hSet.args[49][0], 'store:meta:ent50')
 })

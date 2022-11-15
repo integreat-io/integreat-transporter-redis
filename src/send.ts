@@ -1,20 +1,10 @@
-import { promisify } from 'util'
-import redisLib = require('redis')
+import { createClient } from 'redis'
 import mapAny = require('map-any')
 import pLimit = require('p-limit')
 import debugFn from 'debug'
 import { Action, Response, Connection } from '.'
 
 const debug = debugFn('integreat:transporter:redis')
-
-interface HMSet {
-  (hash: string, fields: string[]): Promise<string>
-}
-interface HMGetAll {
-  (hash: string): Promise<{
-    [key: string]: string
-  }>
-}
 
 type IdTypeTuple = [string, string | undefined]
 
@@ -67,7 +57,7 @@ const useType = (useTypeAsPrefix: boolean, type?: string | string[]) =>
   useTypeAsPrefix && typeof type === 'string' ? type : undefined
 
 async function getIds(
-  client: redisLib.RedisClient,
+  client: ReturnType<typeof createClient>,
   useTypeAsPrefix: boolean,
   type?: string | string[],
   prefix?: string
@@ -78,11 +68,10 @@ async function getIds(
     prefix
   )
   const prefixLength = hashPattern.length - 1
-  const getKeys = promisify(client.keys).bind(client)
 
   debug("Get from redis key pattern '%s'.", hashPattern)
   try {
-    const ids = await getKeys(hashPattern)
+    const ids = await client.keys(hashPattern)
     debug("Redis get with key pattern '%s' returned %o", hashPattern, ids)
     return ids.map((id) => id.slice(prefixLength))
   } catch (error) {
@@ -92,7 +81,7 @@ async function getIds(
 }
 
 async function getItem(
-  hgetall: HMGetAll,
+  client: ReturnType<typeof createClient>,
   useTypeAsPrefix: boolean,
   id: string,
   type?: string | string[],
@@ -102,7 +91,7 @@ async function getItem(
 
   debug("Get from redis id '%s', hash '%s'.", id, hash)
   try {
-    const responseData = await hgetall(hash)
+    const responseData = await client.hGetAll(hash)
     debug("Redis get with hash '%s' returned %o", hash, responseData)
     return responseData && Object.keys(responseData).length > 0
       ? { status: 'ok', data: mapAny(normalizeData(id), responseData) }
@@ -117,7 +106,7 @@ async function getItem(
 }
 
 async function sendGet(
-  client: redisLib.RedisClient,
+  client: ReturnType<typeof createClient>,
   useTypeAsPrefix: boolean,
   id?: string | string[],
   type?: string | string[],
@@ -141,8 +130,6 @@ async function sendGet(
     return sendGet(client, useTypeAsPrefix, ids, type, prefix, concurrency)
   }
 
-  const hgetall = promisify(client.hgetall).bind(client)
-
   // Members
   if (Array.isArray(id)) {
     // Sets max concurrency on promises called with `limit()`
@@ -150,7 +137,7 @@ async function sendGet(
 
     const responses = await Promise.all(
       id.map((id) =>
-        limit(() => getItem(hgetall, useTypeAsPrefix, id, type, prefix))
+        limit(() => getItem(client, useTypeAsPrefix, id, type, prefix))
       )
     )
 
@@ -173,7 +160,7 @@ async function sendGet(
   }
 
   // Member
-  return getItem(hgetall, useTypeAsPrefix, id, type, prefix)
+  return getItem(client, useTypeAsPrefix, id, type, prefix)
 }
 
 const itemToArray = (fields: Record<string, unknown>) =>
@@ -184,7 +171,7 @@ const itemToArray = (fields: Record<string, unknown>) =>
   )
 
 async function setItem(
-  hmset: HMSet,
+  client: ReturnType<typeof createClient>,
   useTypeAsPrefix: boolean,
   item: Record<string, unknown>,
   id?: string | null,
@@ -205,7 +192,7 @@ async function setItem(
 
   debug("Set to redis id '%s', hash '%s': %o", id, hash, fields)
   try {
-    const ret = await hmset(hash, itemToArray(fields))
+    const ret = await client.hSet(hash, itemToArray(fields))
     debug("Redis set with hash '%s' returned %o", hash, ret)
     return { status: 'ok', data: null }
   } catch (error) {
@@ -218,7 +205,7 @@ async function setItem(
 }
 
 async function sendSet(
-  client: redisLib.RedisClient,
+  client: ReturnType<typeof createClient>,
   useTypeAsPrefix: boolean,
   id: string | string[] | null | undefined,
   type: string | string[] | undefined,
@@ -238,16 +225,12 @@ async function sendSet(
     return { status: 'noaction', error: 'No data to SET' }
   }
 
-  const hmset: HMSet = promisify<string, string[], 'OK'>(client.hmset).bind(
-    client
-  )
-
   // Sets max concurrency on promises called with `limit()`
   const limit = pLimit(concurrency)
 
   const results = await Promise.all(
     items.map((item) =>
-      limit(() => setItem(hmset, useTypeAsPrefix, item, id, type, prefix))
+      limit(() => setItem(client, useTypeAsPrefix, item, id, type, prefix))
     )
   )
 
@@ -277,7 +260,7 @@ const extractIdsAndTypeFromData = (
   ).filter(isIdTypeTuple)
 
 async function sendDel(
-  client: redisLib.RedisClient,
+  client: ReturnType<typeof createClient>,
   useTypeAsPrefix: boolean,
   id: string | string[] | null | undefined,
   type: string | string[] | undefined,
@@ -299,11 +282,9 @@ async function sendDel(
     hashFromIdAndPrefix(id, useType(useTypeAsPrefix, itemType || type), prefix)
   )
 
-  const deleteKey = promisify<string[]>(client.del).bind(client)
-
   debug("Delete hashes '%s' from Redis", keys)
   try {
-    const ret = await deleteKey(keys)
+    const ret = await client.del(keys)
     debug("Redis deleted hashes '%s' returned %o", keys, ret)
     return { status: 'ok', data: null }
   } catch (error) {

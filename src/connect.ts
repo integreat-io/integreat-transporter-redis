@@ -1,16 +1,12 @@
-import redisLib = require('redis')
+import { createClient } from 'redis'
 import { Options, Connection } from '.'
 import disconnect from './disconnect'
 import debugFn from 'debug'
 
 const debug = debugFn('integreat:transporter:redis')
 
-interface Redis {
-  createClient: (options?: { [key: string]: string }) => redisLib.RedisClient
-}
-
 const wrapInOk = (
-  redisClient: redisLib.RedisClient,
+  redisClient: ReturnType<typeof createClient>,
   connectionTimeout?: number
 ) => ({
   status: 'ok',
@@ -30,7 +26,7 @@ const createErrorResponse = () => ({
 const isExpired = (expire?: number | null) =>
   typeof expire === 'number' && expire < Date.now()
 
-export default function connect(redis: Redis) {
+export default function connect(createRedis = createClient) {
   return async (
     options: Options,
     _auth: Record<string, unknown> | null,
@@ -53,7 +49,8 @@ export default function connect(redis: Redis) {
       debug(
         `Creating new Redis client with expire timeout ${options.connectionTimeout}.`
       )
-      const client = redis.createClient(options.redis)
+      const client = createRedis(options.redis)
+      await client.connect()
       const connection = wrapInOk(client, options.connectionTimeout)
 
       client.on('error', (err) => {

@@ -1,5 +1,6 @@
 import test from 'ava'
 import sinon = require('sinon')
+import { createClient } from 'redis'
 
 import connect from '../connect'
 import redisTransporter from '..'
@@ -14,16 +15,15 @@ test('should get data from redis service', async (t) => {
     author: JSON.stringify({ id: 'johnf', name: 'John F.' }),
   }
   const redisClient = {
-    hgetall: sinon.stub().yieldsRight(null, redisData),
-    quit: sinon.stub().yieldsRight(null),
+    connect: async () => undefined,
+    hGetAll: sinon.stub().resolves(redisData),
+    quit: sinon.stub().resolves(),
     on: () => redisClient,
   }
-  const redis = {
-    createClient: sinon.stub().returns(redisClient),
-  }
+  const createRedis = () => redisClient
   const transporter = {
     ...redisTransporter,
-    connect: connect(redis),
+    connect: connect(createRedis as unknown as typeof createClient),
   }
   const options = {
     prefix: 'store',
@@ -58,5 +58,5 @@ test('should get data from redis service', async (t) => {
 
   t.is(ret.status, 'ok')
   t.deepEqual(ret.data, expectedData)
-  t.is(redisClient.hgetall.args[0][0], 'store:meta:entries')
+  t.is(redisClient.hGetAll.args[0][0], 'store:meta:entries')
 })

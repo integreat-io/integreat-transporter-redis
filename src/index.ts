@@ -1,4 +1,4 @@
-import redis = require('redis')
+import { createClient } from 'redis'
 import connect from './connect'
 import disconnect from './disconnect'
 import send from './send'
@@ -41,7 +41,7 @@ export interface Connection extends Record<string, unknown> {
   status: string
   error?: string
   expire?: null | number
-  redisClient?: redis.RedisClient | null
+  redisClient?: ReturnType<typeof createClient> | null
 }
 
 export default {
@@ -49,7 +49,7 @@ export default {
 
   prepareOptions: (options: Options): Options => options,
 
-  connect: connect(redis),
+  connect: connect(createClient),
 
   send,
 

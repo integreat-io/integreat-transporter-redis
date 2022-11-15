@@ -8,7 +8,7 @@ import disconnect from './disconnect'
 
 test('should call quit on redis client', async (t) => {
   const redisClient = {
-    quit: sinon.stub().yieldsRight(null),
+    quit: sinon.stub().resolves(),
   }
   const connection = {
     status: 'ok',

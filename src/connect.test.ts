@@ -1,6 +1,6 @@
 import test from 'ava'
 import sinon = require('sinon')
-import redisLib = require('redis')
+import { createClient } from 'redis'
 
 import connect from './connect'
 import { Connection } from '.'
@@ -13,36 +13,39 @@ interface Listener {
 
 const client = {
   on: () => client,
-} as unknown as redisLib.RedisClient
+  connect: async () => undefined,
+} as unknown as ReturnType<typeof createClient>
 
 // Tests
 
 test('should return connection object with created redis client', async (t) => {
-  const redis = {
-    createClient: sinon.stub().returns(client),
-  }
+  const connectStub = sinon.stub().resolves()
+  const clientWithConnect = {
+    ...client,
+    connect: connectStub,
+  } as unknown as ReturnType<typeof createClient>
+  const createClient = sinon.stub().returns(clientWithConnect)
   const options = { redis: { url: 'redis://localhost:6379' } }
 
-  const ret = await connect(redis)(options, null, null)
+  const ret = await connect(createClient)(options, null, null)
 
   t.is(ret?.status, 'ok')
-  t.is(ret?.redisClient, client)
+  t.is(ret?.redisClient, clientWithConnect)
   t.is(ret?.expire, null)
-  t.is(redis.createClient.callCount, 1)
-  t.deepEqual(redis.createClient.args[0][0], { url: 'redis://localhost:6379' })
+  t.is(createClient.callCount, 1)
+  t.deepEqual(createClient.args[0][0], { url: 'redis://localhost:6379' })
+  t.is(connectStub.callCount, 1)
 })
 
 test('should set expire when an connectionTimeout interval is given', async (t) => {
-  const redis = {
-    createClient: sinon.stub().returns(client),
-  }
+  const createClient = sinon.stub().returns(client)
   const options = {
     redis: { url: 'redis://localhost:6379' },
     connectionTimeout: 60000,
   }
   const expectedExpire = Date.now() + 60000
 
-  const ret = await connect(redis)(options, null, null)
+  const ret = await connect(createClient)(options, null, null)
 
   t.is(ret?.status, 'ok')
   t.is(typeof ret?.expire, 'number')
@@ -51,40 +54,34 @@ test('should set expire when an connectionTimeout interval is given', async (t) 
 })
 
 test('should return existing client when given', async (t) => {
-  const redis = {
-    createClient: sinon.stub().returns(client),
-  }
+  const createClient = sinon.stub().returns(client)
   const options = { redis: { url: 'redis://localhost:6379' } }
   const connection = { status: 'ok', redisClient: client }
 
-  const ret = await connect(redis)(options, null, connection)
+  const ret = await connect(createClient)(options, null, connection)
 
   t.is(ret, connection)
-  t.is(redis.createClient.callCount, 0)
+  t.is(createClient.callCount, 0)
 })
 
 test('should reconnect when a connection is missing client', async (t) => {
-  const redis = {
-    createClient: sinon.stub().returns(client),
-  }
+  const createClient = sinon.stub().returns(client)
   const options = { redis: { url: 'redis://localhost:6379' } }
   const connection = { status: 'ok', redisClient: null }
 
-  const ret = await connect(redis)(options, null, connection)
+  const ret = await connect(createClient)(options, null, connection)
 
   t.is(ret?.status, 'ok')
   t.is(ret?.redisClient, client)
-  t.is(redis.createClient.callCount, 1)
+  t.is(createClient.callCount, 1)
 })
 
 test('should reconnect when connection is expired', async (t) => {
   const clientWithQuit = {
     ...client,
-    quit: sinon.stub().yieldsRight(null),
+    quit: sinon.stub().resolves(),
   }
-  const redis = {
-    createClient: sinon.stub().returns(client),
-  }
+  const createClient = sinon.stub().returns(client)
   const options = { redis: { url: 'redis://localhost:6379' } }
   const connection = {
     status: 'ok',
@@ -92,7 +89,7 @@ test('should reconnect when connection is expired', async (t) => {
     expire: Date.now() - 1000,
   }
 
-  const ret = await connect(redis)(
+  const ret = await connect(createClient)(
     options,
     null,
     connection as unknown as Connection
@@ -100,14 +97,12 @@ test('should reconnect when connection is expired', async (t) => {
 
   t.is(ret?.status, 'ok')
   t.is(ret?.redisClient, client)
-  t.is(redis.createClient.callCount, 1)
+  t.is(createClient.callCount, 1)
   t.is(clientWithQuit.quit.callCount, 1)
 })
 
 test('should return error when no redis options', async (t) => {
-  const redis = {
-    createClient: sinon.stub().returns({}),
-  }
+  const createClient = sinon.stub().returns({})
   const options = {}
   const expectedConnection = {
     status: 'error',
@@ -115,10 +110,10 @@ test('should return error when no redis options', async (t) => {
     redisClient: null,
   }
 
-  const ret = await connect(redis)(options, null, null)
+  const ret = await connect(createClient)(options, null, null)
 
   t.deepEqual(ret, expectedConnection)
-  t.is(redis.createClient.callCount, 0)
+  t.is(createClient.callCount, 0)
 })
 
 test('should disconnect on error', async (t) => {
@@ -128,14 +123,12 @@ test('should disconnect on error', async (t) => {
     on: (_eventName: string, listener: Listener) => {
       errorListener = listener
     },
-    quit: sinon.stub().yieldsRight(null),
+    quit: sinon.stub().resolves(),
   }
-  const redis = {
-    createClient: sinon.stub().returns(clientWithQuit),
-  }
+  const createClient = sinon.stub().returns(clientWithQuit)
   const options = { redis: { url: 'redis://localhost:6379' } }
 
-  const ret = await connect(redis)(options, null, null)
+  const ret = await connect(createClient)(options, null, null)
   t.truthy(ret?.redisClient)
   t.is(typeof errorListener, 'function')
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

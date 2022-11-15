@@ -30,11 +30,10 @@
   },
   "dependencies": {
     "@types/debug": "^4.1.7",
-    "@types/redis": "^2.8.32",
     "debug": "^4.3.4",
     "map-any": "^0.2.1",
     "p-limit": "^3.1.0",
-    "redis": "^3.1.2"
+    "redis": "^4.5.0"
   },
   "devDependencies": {
     "@integreat/ts-dev-setup": "^2.3.0",

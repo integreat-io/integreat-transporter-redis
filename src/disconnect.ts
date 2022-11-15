@@ -1,4 +1,3 @@
-import { promisify } from 'util'
 import { Connection } from '.'
 import debugFn from 'debug'
 
@@ -9,7 +8,7 @@ export default async function disconnect(
 ): Promise<void> {
   if (connection && connection.status === 'ok' && connection.redisClient) {
     debug('Disconnect Redis client')
-    await promisify(connection.redisClient.quit).bind(connection.redisClient)()
+    await connection.redisClient.quit()
     connection.redisClient = null
   }
 }
