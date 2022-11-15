@@ -5,7 +5,7 @@ import pLimit = require('p-limit')
 import debugFn from 'debug'
 import { Action, Response, Connection } from '.'
 
-const debug = debugFn('great:adapter:redis')
+const debug = debugFn('integreat:transporter:redis')
 
 interface HMSet {
   (hash: string, fields: string[]): Promise<string>
@@ -322,7 +322,7 @@ export default async function send(
   if (!connection || connection.status !== 'ok' || !connection.redisClient) {
     return {
       status: 'error',
-      error: "No redis client given to redis adapter's send method",
+      error: "No redis client given to redis transporter's send method",
     }
   }
   const {

@@ -2,7 +2,7 @@ import { promisify } from 'util'
 import { Connection } from '.'
 import debugFn from 'debug'
 
-const debug = debugFn('great:adapter:redis')
+const debug = debugFn('integreat:transporter:redis')
 
 export default async function disconnect(
   connection: Connection | null

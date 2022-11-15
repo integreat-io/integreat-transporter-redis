@@ -1,8 +1,8 @@
 {
-  "name": "integreat-adapter-redis",
+  "name": "integreat-transporter-redis",
   "version": "0.4.7",
-  "description": "Redis adapter for Integreat",
-  "author": "Kjell-Morten Bratsberg Thorsen <post@kjellmorten.no>",
+  "description": "Redis transporter for Integreat",
+  "author": "Kjell-Morten Bratsberg Thorsen <kjellmorten@integreat.io> (https://integreat.io/)",
   "license": "ISC",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,12 +19,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/integreat-io/integreat-adapter-redis.git"
+    "url": "git+https://github.com/integreat-io/integreat-transporter-redis.git"
   },
   "bugs": {
-    "url": "https://github.com/integreat-io/integreat-adapter-redis/issues"
+    "url": "https://github.com/integreat-io/integreat-transporter-redis/issues"
   },
-  "homepage": "https://github.com/integreat-io/integreat-adapter-redis#readme",
+  "homepage": "https://github.com/integreat-io/integreat-transporter-redis#readme",
   "engines": {
     "node": ">= 14"
   },

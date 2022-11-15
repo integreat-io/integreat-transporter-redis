@@ -1,14 +1,14 @@
-# Redis adapter for Integreat
+# Redis transporter for Integreat
 
-Adapter that lets
+Transporter that lets
 [Integreat](https://github.com/integreat-io/integreat) access content in a Redis
 database.
 
-[![npm Version](https://img.shields.io/npm/v/integreat-adapter-redis.svg)](https://www.npmjs.com/package/integreat-adapter-redis)
-[![Build Status](https://travis-ci.org/integreat-io/integreat-adapter-redis.svg?branch=master)](https://travis-ci.org/integreat-io/integreat-adapter-redis)
-[![Coverage Status](https://coveralls.io/repos/github/integreat-io/integreat-adapter-redis/badge.svg?branch=master)](https://coveralls.io/github/integreat-io/integreat-adapter-redis?branch=master)
-[![Dependencies Status](https://tidelift.com/badges/github/integreat-io/integreat-adapter-redis?style=flat)](https://tidelift.com/repo/github/integreat-io/integreat-adapter-redis)
-[![Maintainability](https://api.codeclimate.com/v1/badges/6331723a6ff61de5f232/maintainability)](https://codeclimate.com/github/integreat-io/integreat-adapter-redis/maintainability)
+[![npm Version](https://img.shields.io/npm/v/integreat-transporter-redis.svg)](https://www.npmjs.com/package/integreat-transporter-redis)
+[![Build Status](https://travis-ci.org/integreat-io/integreat-transporter-redis.svg?branch=master)](https://travis-ci.org/integreat-io/integreat-transporter-redis)
+[![Coverage Status](https://coveralls.io/repos/github/integreat-io/integreat-transporter-redis/badge.svg?branch=master)](https://coveralls.io/github/integreat-io/integreat-transporter-redis?branch=master)
+[![Dependencies Status](https://tidelift.com/badges/github/integreat-io/integreat-transporter-redis?style=flat)](https://tidelift.com/repo/github/integreat-io/integreat-transporter-redis)
+[![Maintainability](https://api.codeclimate.com/v1/badges/6331723a6ff61de5f232/maintainability)](https://codeclimate.com/github/integreat-io/integreat-transporter-redis/maintainability)
 
 ## Getting started
 
@@ -21,17 +21,17 @@ Requires node v14 and Integreat v0.8.
 Install from npm:
 
 ```
-npm install integreat-adapter-redis
+npm install integreat-transporter-redis
 ```
 
 Example of use:
 
 ```javascript
 import integreat from 'integreat'
-import redisAdapter from 'integreat-adapter-redis'
+import redis from 'integreat-transporter-redis'
 import defs from './config'
 
-const resources = integreat.resources({ transporters: { redis: redisAdapter } })
+const resources = integreat.resources({ transporters: { redis: redis } })
 const great = Integreat.create(defs, resources)
 
 // ... and then dispatch actions as usual
@@ -42,7 +42,7 @@ Example source configuration:
 ```javascript
 {
   id: 'store',
-  adapter: 'redis',
+  transporter: 'redis',
   endpoints: [{
     options: {
       prefix: 'store',
@@ -64,12 +64,12 @@ The tests can be run with `npm test`.
 ## Contributing
 
 Please read
-[CONTRIBUTING](https://github.com/integreat-io/integreat-adapter-redis/blob/master/CONTRIBUTING.md)
+[CONTRIBUTING](https://github.com/integreat-io/integreat-transporter-redis/blob/master/CONTRIBUTING.md)
 for details on our code of conduct, and the process for submitting pull
 requests.
 
 ## License
 
 This project is licensed under the ISC License - see the
-[LICENSE](https://github.com/integreat-io/integreat-adapter-redis/blob/master/LICENSE)
+[LICENSE](https://github.com/integreat-io/integreat-transporter-redis/blob/master/LICENSE)
 file for details.

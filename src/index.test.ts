@@ -1,19 +1,19 @@
 import test from 'ava'
 
-import adapter from '.'
+import transporter from '.'
 
-test('should be an Integreat adapter', (t) => {
-  t.truthy(adapter)
-  t.is(typeof adapter.prepareOptions, 'function')
-  t.is(typeof adapter.send, 'function')
-  t.is(typeof adapter.connect, 'function')
-  t.is(typeof adapter.disconnect, 'function')
+test('should be an Integreat transporter', (t) => {
+  t.truthy(transporter)
+  t.is(typeof transporter.prepareOptions, 'function')
+  t.is(typeof transporter.send, 'function')
+  t.is(typeof transporter.connect, 'function')
+  t.is(typeof transporter.disconnect, 'function')
 })
 
 test('should have minimal prepareOptions implementation', (t) => {
   const endpointOptions = { prefix: 'store' }
 
-  const ret = adapter.prepareOptions(endpointOptions)
+  const ret = transporter.prepareOptions(endpointOptions)
 
   t.deepEqual(ret, endpointOptions)
 })

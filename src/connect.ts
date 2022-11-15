@@ -3,7 +3,7 @@ import { Options, Connection } from '.'
 import disconnect from './disconnect'
 import debugFn from 'debug'
 
-const debug = debugFn('great:adapter:redis')
+const debug = debugFn('integreat:transporter:redis')
 
 interface Redis {
   createClient: (options?: { [key: string]: string }) => redisLib.RedisClient

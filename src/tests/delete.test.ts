@@ -2,7 +2,7 @@ import test from 'ava'
 import sinon = require('sinon')
 
 import connect from '../connect'
-import redisAdapter from '..'
+import redisTransporter from '..'
 
 // Tests
 
@@ -15,8 +15,8 @@ test('should delete data from redis service', async (t) => {
   const redis = {
     createClient: sinon.stub().returns(redisClient),
   }
-  const adapter = {
-    ...redisAdapter,
+  const transporter = {
+    ...redisTransporter,
     connect: connect(redis),
   }
   const data = [
@@ -44,9 +44,9 @@ test('should delete data from redis service', async (t) => {
     meta: { options },
   }
 
-  const client = await adapter.connect(options, null, null)
-  const ret = await adapter.send(action, client)
-  await adapter.disconnect(client)
+  const client = await transporter.connect(options, null, null)
+  const ret = await transporter.send(action, client)
+  await transporter.disconnect(client)
 
   t.is(ret.status, 'ok', ret.error)
   t.is(ret.data, null)

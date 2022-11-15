@@ -930,7 +930,7 @@ test('should return error when no connection', async (t) => {
   }
   const expected = {
     status: 'error',
-    error: "No redis client given to redis adapter's send method",
+    error: "No redis client given to redis transporter's send method",
   }
 
   const ret = await send(action, null)
@@ -954,7 +954,7 @@ test('should return error when no client', async (t) => {
   const connection = { status: 'error', error: 'Fail', redisClient: null }
   const expected = {
     status: 'error',
-    error: "No redis client given to redis adapter's send method",
+    error: "No redis client given to redis transporter's send method",
   }
 
   const ret = await send(action, connection)
@@ -974,7 +974,7 @@ test('should return error when no options', async (t) => {
   const connection = { status: 'error', error: 'Fail', redisClient: null }
   const expected = {
     status: 'error',
-    error: "No redis client given to redis adapter's send method",
+    error: "No redis client given to redis transporter's send method",
   }
 
   const ret = await send(action, connection)
