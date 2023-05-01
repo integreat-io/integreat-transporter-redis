@@ -17,11 +17,14 @@ export const normalizeData = (id: string) => (data: Record<string, string>) =>
 const serializeObject = (value: Record<string, unknown>) =>
   value instanceof Date ? value.toISOString() : JSON.stringify(value)
 
-export const serializeData = (value: unknown) =>
-  value === null
-    ? '##null##'
-    : isObject(value)
-    ? serializeObject(value)
-    : isDate(value)
-    ? value.toISOString()
-    : String(value)
+export function serializeData(value: unknown) {
+  if (value === null) {
+    return '##null##'
+  } else if (isObject(value)) {
+    return serializeObject(value)
+  } else if (isDate(value)) {
+    return value.toISOString()
+  } else {
+    return String(value)
+  }
+}
