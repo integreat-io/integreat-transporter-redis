@@ -1,5 +1,5 @@
 import debugFn from 'debug'
-import type { Connection } from './index.js'
+import type { Connection } from './types.js'
 
 const debug = debugFn('integreat:transporter:redis')
 

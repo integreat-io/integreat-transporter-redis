@@ -1,8 +1,8 @@
 import test from 'ava'
 import sinon from 'sinon'
-import type { Connection } from './index.js'
+import type { Connection } from '../types.js'
 
-import send from './send.js'
+import send from './index.js'
 
 // Setup
 
