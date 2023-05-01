@@ -1,7 +1,7 @@
-import { createClient } from 'redis'
-import { Options, Connection } from '.'
-import disconnect from './disconnect'
 import debugFn from 'debug'
+import { createClient } from 'redis'
+import type { Options, Connection } from './index.js'
+import disconnect from './disconnect.js'
 
 const debug = debugFn('integreat:transporter:redis')
 

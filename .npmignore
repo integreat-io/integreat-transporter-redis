@@ -1,9 +1,10 @@
 src/
-coverage
-*.test.js
-*.test.d.ts
+coverage/
+dist/tests/
+*.test*
 *.map
 .*
 tsconfig.json
-tslint.json
 *.config.cjs
+redisdata
+docker-compose.yml

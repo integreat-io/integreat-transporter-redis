@@ -1,8 +1,8 @@
 import { createClient } from 'redis'
-import mapAny = require('map-any')
-import pLimit = require('p-limit')
+import mapAny from 'map-any'
+import pLimit from 'p-limit'
 import debugFn from 'debug'
-import { Action, Response, Connection } from '.'
+import type { Action, Response, Connection } from './index.js'
 
 const debug = debugFn('integreat:transporter:redis')
 

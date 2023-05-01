@@ -1,9 +1,9 @@
 import test from 'ava'
-import sinon = require('sinon')
+import sinon from 'sinon'
 import { createClient } from 'redis'
+import type { Connection } from './index.js'
 
-import connect from './connect'
-import { Connection } from '.'
+import connect from './connect.js'
 
 // Setup
 

@@ -1,7 +1,7 @@
 import { createClient } from 'redis'
-import connect from './connect'
-import disconnect from './disconnect'
-import send from './send'
+import connect from './connect.js'
+import disconnect from './disconnect.js'
+import send from './send.js'
 
 export interface Options extends Record<string, unknown> {
   prefix?: string
