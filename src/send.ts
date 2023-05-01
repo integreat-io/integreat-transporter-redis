@@ -2,7 +2,8 @@ import { createClient } from 'redis'
 import mapAny from 'map-any'
 import pLimit from 'p-limit'
 import debugFn from 'debug'
-import type { Action, Response, Connection } from './index.js'
+import type { Action, Response } from 'integreat'
+import type { Connection } from './index.js'
 
 const debug = debugFn('integreat:transporter:redis')
 
@@ -282,6 +283,17 @@ async function sendDel(
   }
 }
 
+const parseAction = ({ payload, meta: { options } = {} }: Action) => ({
+  data: payload.data,
+  id: payload.id,
+  type: payload.type,
+  pattern: typeof payload.pattern === 'string' ? payload.pattern : undefined,
+  prefix: typeof options?.prefix === 'string' ? options?.prefix : undefined,
+  concurrency:
+    typeof options?.concurrency === 'number' ? options?.concurrency : undefined,
+  useTypeAsPrefix: options?.useTypeAsPrefix === false ? false : true,
+})
+
 export default async function send(
   action: Action,
   connection: Connection | null
@@ -292,18 +304,14 @@ export default async function send(
       error: "No redis client given to redis transporter's send method",
     }
   }
-  const {
-    type: actionType,
-    meta,
-    payload: { data, id, type, pattern },
-  } = action
+  const { data, id, type, pattern, prefix, concurrency, useTypeAsPrefix } =
+    parseAction(action)
 
-  const { prefix, concurrency, useTypeAsPrefix = true } = meta?.options || {}
   const client = connection.redisClient
 
   const generateIdFn = generateId(prefix, type, useTypeAsPrefix)
 
-  switch (actionType) {
+  switch (action.type) {
     case 'GET':
       return sendGet(client, generateIdFn, id, pattern, concurrency)
     case 'SET':
@@ -311,6 +319,6 @@ export default async function send(
     case 'DELETE':
       return sendDel(client, generateIdFn, id, data)
     default:
-      return { status: 'badrequest', error: `Unknown action '${actionType}'` }
+      return { status: 'badrequest', error: `Unknown action '${action.type}'` }
   }
 }

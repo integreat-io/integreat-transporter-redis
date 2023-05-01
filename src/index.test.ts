@@ -12,8 +12,9 @@ test('should be an Integreat transporter', (t) => {
 
 test('should have minimal prepareOptions implementation', (t) => {
   const endpointOptions = { prefix: 'store' }
+  const serviceId = 'entries'
 
-  const ret = transporter.prepareOptions(endpointOptions)
+  const ret = transporter.prepareOptions(endpointOptions, serviceId)
 
   t.deepEqual(ret, endpointOptions)
 })
