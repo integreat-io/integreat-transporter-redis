@@ -283,9 +283,16 @@ async function sendDel(
   }
 }
 
+const numberToString = (value: unknown) =>
+  typeof value === 'number'
+    ? String(value)
+    : typeof value === 'string'
+    ? value
+    : undefined
+
 const parseAction = ({ payload, meta: { options } = {} }: Action) => ({
   data: payload.data,
-  id: payload.id,
+  id: mapAny(numberToString, payload.id),
   type: payload.type,
   pattern: typeof payload.pattern === 'string' ? payload.pattern : undefined,
   prefix: typeof options?.prefix === 'string' ? options?.prefix : undefined,

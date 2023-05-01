@@ -103,6 +103,45 @@ test('should GET several ids from redis', async (t) => {
   t.is(data[1].title, 'Entry 2')
 })
 
+test('should GET from redis with numeric id', async (t) => {
+  const redisData = [
+    {
+      title: 'Entry 1',
+      description: 'The first entry',
+    },
+  ]
+  const redisClient = {
+    hGetAll: sinon.stub().resolves(redisData),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      id: 12345, // Numeric id
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+  const expected = {
+    status: 'ok',
+    data: [
+      {
+        id: '12345',
+        title: 'Entry 1',
+        description: 'The first entry',
+      },
+    ],
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ret = await send(action as any, wrapInConnection(redisClient))
+
+  t.deepEqual(ret, expected)
+  t.is(redisClient.hGetAll.callCount, 1)
+  t.deepEqual(redisClient.hGetAll.args[0][0], 'meta:12345')
+})
+
 test('should GET collection from redis', async (t) => {
   const redisData0 = [{ title: 'Entry 1' }]
   const redisData1 = [{ title: 'Entry 2' }]
