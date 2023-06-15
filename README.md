@@ -45,7 +45,7 @@ Example source configuration:
   endpoints: [{
     options: {
       prefix: 'store',
-      redis: { url: 'redis://localhost:6379' },
+      redis: { uri: 'redis://localhost:6379' },
       concurrency: 5
       useTypeAsPrefix: true // Default is `true`
     }
@@ -53,8 +53,18 @@ Example source configuration:
 }
 ```
 
-The `redis` endpoint options are sent as-is to `redis.createClient()`.
-[See node_redis documentation for options](https://github.com/redis/node-redis/blob/d09732280b1ed1e41cb53b687ed04a6be0fff8ab/docs/client-configuration.md).
+The available properties for the `redis` options object are as follow:
+
+- `uri`: The entire URL of Redis database
+- `host`: The Redis server hostname, default is `localhost`
+- `port`: The Redis server port, default is `6379`
+- `database`: The Redis database number. Get this in Redis with [`SELECT index`](https://redis.io/commands/select/)
+- `auth`: The Redis username as `key` and Redis password as `secret`
+- `key`: The Redis username
+- `secret`: The Redis password
+- `tls`: Set to `true` to enable TLS. Default is `false`
+
+You may choose to set the `uri` or specify the individual properties.
 
 ### Debugging
 

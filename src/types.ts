@@ -4,11 +4,21 @@ export interface GenerateId {
   (id: string, type?: string): string
 }
 
+export interface RedisOptions {
+  uri?: string
+  host?: string
+  port?: number
+  database?: number
+  tls?: boolean
+  auth?: {
+    key?: string
+    secret?: string
+  }
+}
+
 export interface Options extends Record<string, unknown> {
   prefix?: string
-  redis?: {
-    [key: string]: string
-  }
+  redis?: RedisOptions
   concurrency?: number
   connectionTimeout?: number
   useTypeAsPrefix?: boolean

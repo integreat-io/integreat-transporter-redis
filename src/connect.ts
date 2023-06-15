@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import debugFn from 'debug'
 import { createClient } from 'redis'
 import disconnect from './disconnect.js'
-import type { Options, Connection } from './types.js'
+import type { Options, Connection, RedisOptions } from './types.js'
 
 const debug = debugFn('integreat:transporter:redis')
 
@@ -26,6 +27,23 @@ const createErrorResponse = () => ({
 const isExpired = (expire?: number | null) =>
   typeof expire === 'number' && expire < Date.now()
 
+const prepareRedisOptions = ({
+  uri,
+  host,
+  port,
+  database,
+  tls,
+  auth: { key, secret } = {},
+}: RedisOptions) =>
+  typeof uri === 'string'
+    ? { url: uri }
+    : {
+        socket: { host, port, tls },
+        database,
+        username: key,
+        password: secret,
+      }
+
 async function createConnection(
   createRedis: typeof createClient,
   options: Options
@@ -33,7 +51,7 @@ async function createConnection(
   debug(
     `Creating new Redis client with expire timeout ${options.connectionTimeout}.`
   )
-  const client = createRedis(options.redis)
+  const client = createRedis(prepareRedisOptions(options.redis!)) // TS: We tested this before calling this fn
   await client.connect()
   const connection = wrapInOk(client, options.connectionTimeout)
 
