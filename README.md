@@ -60,8 +60,6 @@ The available properties for the `redis` options object are as follow:
 - `port`: The Redis server port, default is `6379`
 - `database`: The Redis database number. Get this in Redis with [`SELECT index`](https://redis.io/commands/select/)
 - `auth`: The Redis username as `key` and Redis password as `secret`
-- `key`: The Redis username
-- `secret`: The Redis password
 - `tls`: Set to `true` to enable TLS. Default is `false`
 
 You may choose to set the `uri` or specify the individual properties.
