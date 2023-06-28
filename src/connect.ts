@@ -9,7 +9,7 @@ const debug = debugFn('integreat:transporter:redis')
 const wrapInOk = (
   redisClient: ReturnType<typeof createClient>,
   connectionTimeout?: number
-) => ({
+): Connection => ({
   status: 'ok',
   redisClient,
   expire:
@@ -52,14 +52,16 @@ async function createConnection(
     `Creating new Redis client with expire timeout ${options.connectionTimeout}.`
   )
   const client = createRedis(prepareRedisOptions(options.redis!)) // TS: We tested this before calling this fn
-  await client.connect()
-  const connection = wrapInOk(client, options.connectionTimeout)
+  let connection: Connection | null = null
 
+  // We need to set the error handler before calling `connect()`, or else `redis` will not reconnect on disconnects
   client.on('error', (err) => {
     debug(`Disconnecting. Redis error: ${err}`)
     return disconnect(connection)
   })
 
+  await client.connect()
+  connection = wrapInOk(client, options.connectionTimeout)
   return connection
 }
 

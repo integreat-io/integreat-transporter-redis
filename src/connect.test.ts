@@ -37,6 +37,23 @@ test('should return connection object with created redis client', async (t) => {
   t.is(connectStub.callCount, 1)
 })
 
+test('should set error handler before connecting', async (t) => {
+  const connectStub = sinon.stub().resolves()
+  const onStub = sinon.stub()
+  const clientWithConnect = {
+    ...client,
+    connect: connectStub,
+    on: onStub,
+  } as unknown as ReturnType<typeof createClient>
+  const createClient = sinon.stub().returns(clientWithConnect)
+  const options = { redis: { uri: 'redis://localhost:6379' } }
+
+  const ret = await connect(createClient)(options, null, null)
+
+  t.is(ret?.status, 'ok')
+  t.true(onStub.calledBefore(connectStub))
+})
+
 test('should provide the expected options to Redis', async (t) => {
   const connectStub = sinon.stub().resolves()
   const clientWithConnect = {
