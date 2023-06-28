@@ -1,6 +1,6 @@
 {
   "name": "integreat-transporter-redis",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Redis transporter for Integreat",
   "author": "Kjell-Morten Bratsberg Thorsen <kjellmorten@integreat.io> (https://integreat.io/)",
   "license": "ISC",
@@ -16,7 +16,7 @@
     "test:watch": "npm run dev",
     "dev": "ava --watch",
     "build": "tsc",
-    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
     "coverage": "c8 report",
     "lint": "eslint --ext .ts src"
   },
