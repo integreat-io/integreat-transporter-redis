@@ -56,8 +56,7 @@ async function createConnection(
 
   // We need to set the error handler before calling `connect()`, or else `redis` will not reconnect on disconnects
   client.on('error', (err) => {
-    debug(`Disconnecting. Redis error: ${err}`)
-    return disconnect(connection)
+    debug(`Redis error: ${err}`)
   })
 
   await client.connect()

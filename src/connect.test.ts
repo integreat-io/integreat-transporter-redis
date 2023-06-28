@@ -172,24 +172,3 @@ test('should return error when no redis options', async (t) => {
   t.deepEqual(ret, expectedConnection)
   t.is(createClient.callCount, 0)
 })
-
-test('should disconnect on error', async (t) => {
-  let errorListener: Listener | null = null
-  const clientWithQuit = {
-    ...client,
-    on: (_eventName: string, listener: Listener) => {
-      errorListener = listener
-    },
-    quit: sinon.stub().resolves(),
-  }
-  const createClient = sinon.stub().returns(clientWithQuit)
-  const options = { redis: { uri: 'redis://localhost:6379' } }
-
-  const ret = await connect(createClient)(options, null, null)
-  t.truthy(ret?.redisClient)
-  t.is(typeof errorListener, 'function')
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  errorListener!(new Error('Failure'))
-
-  t.is(clientWithQuit.quit.callCount, 1)
-})
