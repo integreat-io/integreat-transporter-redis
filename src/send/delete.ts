@@ -9,7 +9,7 @@ const debug = debugFn('integreat:transporter:redis')
 type IdTypeTuple = [string, string | undefined]
 
 export const isIdTypeTuple = (value: unknown): value is IdTypeTuple =>
-  Array.isArray(value)
+  Array.isArray(value) && value.length === 2 && typeof value[0] === 'string'
 
 const idAndTypeFromItem = (item: unknown) =>
   isObject(item) ? [item.id, item.$type] : undefined

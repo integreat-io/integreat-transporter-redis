@@ -827,6 +827,32 @@ test('should DELETE one id from redis', async (t) => {
   t.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
 })
 
+test('should DELETE with id from redis when data has no id', async (t) => {
+  const redisClient = {
+    del: sinon.stub().resolves(2),
+  }
+  const action = {
+    type: 'DELETE',
+    payload: {
+      type: 'meta',
+      id: 'ent1',
+      data: {},
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.del.callCount, 1)
+  t.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
+})
+
 test('should do nothing when DELETE has no ids', async (t) => {
   const redisClient = {
     del: sinon.stub().resolves(2),
