@@ -7,10 +7,6 @@ import connect from './connect.js'
 
 // Setup
 
-interface Listener {
-  (error: Error): void
-}
-
 const client = {
   on: () => client,
   connect: async () => undefined,
