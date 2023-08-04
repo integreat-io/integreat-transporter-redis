@@ -42,7 +42,7 @@
     "@integreat/ts-dev-setup": "^4.1.1",
     "@types/debug": "^4.1.8",
     "@types/sinon": "^10.0.16",
-    "integreat": "^0.8.9",
+    "integreat": "^1.0.0",
     "sinon": "^15.2.0"
   }
 }
