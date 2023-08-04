@@ -33,16 +33,16 @@
     "node": ">= 18"
   },
   "dependencies": {
-    "@types/debug": "^4.1.8",
     "debug": "^4.3.4",
-    "map-any": "^0.2.1",
+    "map-any": "^0.3.1",
     "p-limit": "^4.0.0",
     "redis": "^4.6.7"
   },
   "devDependencies": {
     "@integreat/ts-dev-setup": "^4.1.1",
-    "@types/sinon": "^10.0.15",
-    "integreat": "^0.8.5",
+    "@types/debug": "^4.1.8",
+    "@types/sinon": "^10.0.16",
+    "integreat": "^0.8.9",
     "sinon": "^15.2.0"
   }
 }
