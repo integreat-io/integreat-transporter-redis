@@ -33,6 +33,26 @@ test('should return connection object with created redis client', async (t) => {
   t.is(connectStub.callCount, 1)
 })
 
+test('should return connection object with created redis client from auth object', async (t) => {
+  const connectStub = sinon.stub().resolves()
+  const clientWithConnect = {
+    ...client,
+    connect: connectStub,
+  } as unknown as ReturnType<typeof createClient>
+  const createClient = sinon.stub().returns(clientWithConnect)
+  const options = {}
+  const auth = { uri: 'redis://localhost:6379' }
+
+  const ret = await connect(createClient)(options, auth, null)
+
+  t.is(ret?.status, 'ok')
+  t.is(ret?.redisClient, clientWithConnect)
+  t.is(ret?.expire, null)
+  t.is(createClient.callCount, 1)
+  t.deepEqual(createClient.args[0][0], { url: 'redis://localhost:6379' })
+  t.is(connectStub.callCount, 1)
+})
+
 test('should set error handler before connecting', async (t) => {
   const connectStub = sinon.stub().resolves()
   const onStub = sinon.stub()

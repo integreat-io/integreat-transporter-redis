@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import debugFn from 'debug'
 import { createClient } from 'redis'
 import disconnect from './disconnect.js'
@@ -46,12 +45,13 @@ const prepareRedisOptions = ({
 
 async function createConnection(
   createRedis: typeof createClient,
+  authObj: RedisOptions,
   options: Options
 ) {
   debug(
     `Creating new Redis client with expire timeout ${options.connectionTimeout}.`
   )
-  const client = createRedis(prepareRedisOptions(options.redis!)) // TS: We tested this before calling this fn
+  const client = createRedis(prepareRedisOptions(authObj)) // TS: We tested this before calling this fn
   let connection: Connection | null = null
 
   // We need to set the error handler before calling `connect()`, or else `redis` will not reconnect on disconnects
@@ -67,7 +67,7 @@ async function createConnection(
 export default function connect(createRedis = createClient) {
   return async (
     options: Options,
-    _auth: Record<string, unknown> | null,
+    auth: RedisOptions | null,
     connection: Connection | null
   ): Promise<Connection | null> => {
     // If a connection with a redisClient is given -- return it
@@ -83,8 +83,9 @@ export default function connect(createRedis = createClient) {
     }
 
     // Connect to redis (create a new redis client)
-    if (options && options.redis) {
-      return await createConnection(createRedis, options)
+    const authObj = auth || options?.redis
+    if (authObj && options) {
+      return await createConnection(createRedis, authObj, options)
     } else {
       return createErrorResponse()
     }
