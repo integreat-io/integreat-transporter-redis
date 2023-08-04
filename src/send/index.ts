@@ -6,6 +6,11 @@ import { generateId } from '../utils/ids.js'
 import type { Action, Response } from 'integreat'
 import type { Connection } from '../types.js'
 
+const isString = (value: unknown): value is string => typeof value === 'string'
+
+const filterIfArray = (value?: string | (string | undefined)[]) =>
+  Array.isArray(value) ? value.filter(isString) : value
+
 const numberToString = (value: unknown) =>
   typeof value === 'number'
     ? String(value)
@@ -15,7 +20,7 @@ const numberToString = (value: unknown) =>
 
 const parseAction = ({ payload, meta: { options } = {} }: Action) => ({
   data: payload.data,
-  id: mapAny(numberToString, payload.id),
+  id: filterIfArray(mapAny(numberToString, payload.id)),
   type: payload.type,
   pattern: typeof payload.pattern === 'string' ? payload.pattern : undefined,
   prefix: typeof options?.prefix === 'string' ? options?.prefix : undefined,
