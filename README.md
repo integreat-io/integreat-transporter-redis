@@ -64,8 +64,8 @@ The available properties for the `redis` options object are as follow:
 
 You may choose to set the `uri` or specify the individual properties.
 
-Redis options can also be given to the transporter through an authenticator,
-e.g. the `options` authenticator, with the same props as above.
+Redis options can also be given the credentials, i.e. the `key` and `secret`
+values, through an authenticator, like the `options` authenticator.
 
 ### Debugging
 

@@ -23,6 +23,7 @@ export interface Options extends Record<string, unknown> {
   connectionTimeout?: number
   useTypeAsPrefix?: boolean
 }
+
 export interface Connection extends Record<string, unknown> {
   status: string
   error?: string

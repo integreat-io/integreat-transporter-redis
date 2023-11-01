@@ -7,7 +7,7 @@ const debug = debugFn('integreat:transporter:redis')
 
 const wrapInOk = (
   redisClient: ReturnType<typeof createClient>,
-  connectionTimeout?: number
+  connectionTimeout?: number,
 ): Connection => ({
   status: 'ok',
   redisClient,
@@ -26,32 +26,28 @@ const createErrorResponse = () => ({
 const isExpired = (expire?: number | null) =>
   typeof expire === 'number' && expire < Date.now()
 
-const prepareRedisOptions = ({
-  uri,
-  host,
-  port,
-  database,
-  tls,
-  auth: { key, secret } = {},
-}: RedisOptions) =>
+const prepareRedisOptions = (
+  { uri, host, port, database, tls, auth: { key, secret } = {} }: RedisOptions,
+  auth: Record<string, unknown> | null,
+) =>
   typeof uri === 'string'
     ? { url: uri }
     : {
         socket: { host, port, tls },
         database,
-        username: key,
-        password: secret,
+        username: auth?.key ?? key,
+        password: auth?.secret ?? secret,
       }
 
 async function createConnection(
   createRedis: typeof createClient,
   authObj: RedisOptions,
-  options: Options
+  options: Options,
 ) {
   debug(
-    `Creating new Redis client with expire timeout ${options.connectionTimeout}.`
+    `Creating new Redis client with expire timeout ${options.connectionTimeout}.`,
   )
-  const client = createRedis(prepareRedisOptions(authObj)) // TS: We tested this before calling this fn
+  const client = createRedis(authObj) // TS: We tested this before calling this fn
   let connection: Connection | null = null
 
   // We need to set the error handler before calling `connect()`, or else `redis` will not reconnect on disconnects
@@ -67,8 +63,8 @@ async function createConnection(
 export default function connect(createRedis = createClient) {
   return async (
     options: Options,
-    auth: RedisOptions | null,
-    connection: Connection | null
+    auth: Record<string, unknown> | null,
+    connection: Connection | null,
   ): Promise<Connection | null> => {
     // If a connection with a redisClient is given -- return it
     if (connection?.redisClient) {
@@ -83,9 +79,9 @@ export default function connect(createRedis = createClient) {
     }
 
     // Connect to redis (create a new redis client)
-    const authObj = auth || options?.redis
-    if (authObj && options) {
-      return await createConnection(createRedis, authObj, options)
+    if (options?.redis && options) {
+      const redisOptions = prepareRedisOptions(options.redis, auth)
+      return await createConnection(createRedis, redisOptions, options)
     } else {
       return createErrorResponse()
     }
