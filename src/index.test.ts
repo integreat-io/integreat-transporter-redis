@@ -4,6 +4,7 @@ import transporter from './index.js'
 
 test('should be an Integreat transporter', (t) => {
   t.truthy(transporter)
+  t.is(transporter.authentication, 'asObject')
   t.is(typeof transporter.prepareOptions, 'function')
   t.is(typeof transporter.send, 'function')
   t.is(typeof transporter.connect, 'function')

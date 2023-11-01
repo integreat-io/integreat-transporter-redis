@@ -5,7 +5,7 @@ import disconnect from './disconnect.js'
 import send from './send/index.js'
 
 const transporter: Transporter = {
-  authentication: null,
+  authentication: 'asObject',
 
   prepareOptions: (options, _serviceId) => options,
 
