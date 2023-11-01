@@ -16,7 +16,6 @@
     "test:watch": "npm run dev",
     "dev": "ava --watch",
     "build": "tsc",
-    "prepublishOnly": "npm run build",
     "coverage": "c8 report",
     "lint": "eslint --ext .ts src",
     "verify": "npm run lint && npm run build && npm test"
@@ -34,15 +33,15 @@
   },
   "dependencies": {
     "debug": "^4.3.4",
-    "map-any": "^0.3.1",
+    "map-any": "^1.0.0",
     "p-limit": "^4.0.0",
-    "redis": "^4.6.7"
+    "redis": "^4.6.10"
   },
   "devDependencies": {
-    "@integreat/ts-dev-setup": "^4.1.1",
-    "@types/debug": "^4.1.8",
-    "@types/sinon": "^10.0.16",
-    "integreat": "^1.0.0",
-    "sinon": "^15.2.0"
+    "@integreat/ts-dev-setup": "^5.0.3",
+    "@types/debug": "^4.1.10",
+    "@types/sinon": "^10.0.20",
+    "integreat": "^1.4.2",
+    "sinon": "^17.0.1"
   }
 }
