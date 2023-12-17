@@ -67,6 +67,15 @@ You may choose to set the `uri` or specify the individual properties.
 Redis options can also be given the credentials, i.e. the `key` and `secret`
 values, through an authenticator, like the `options` authenticator.
 
+#### Listening to changes
+
+The Redis transporter supports listening to changes in the database. To enable
+this, set the `keyPattern` in the `incoming` object on `options`. When the
+Integreat instance is set up, call `listen()` on the instance, and Integreat
+will dispatch `SET` action to changes to keys matching the pattern.
+
+Note that we only listen for `hset` changes for now.
+
 ### Debugging
 
 Run Integreat with env variable `DEBUG=integreat:transporter:redis`, to receive

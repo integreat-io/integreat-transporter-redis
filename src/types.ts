@@ -16,12 +16,17 @@ export interface RedisOptions {
   }
 }
 
+export interface IncomingOptions {
+  keyPattern?: string
+}
+
 export interface Options extends Record<string, unknown> {
   prefix?: string
   redis?: RedisOptions
   concurrency?: number
   connectionTimeout?: number
   useTypeAsPrefix?: boolean
+  incoming?: IncomingOptions
 }
 
 export interface Connection extends Record<string, unknown> {
@@ -29,4 +34,5 @@ export interface Connection extends Record<string, unknown> {
   error?: string
   expire?: null | number
   redisClient?: ReturnType<typeof createClient> | null
+  incoming?: IncomingOptions
 }

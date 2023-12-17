@@ -7,7 +7,7 @@ const debug = debugFn('integreat:transporter:redis')
 
 const wrapInOk = (
   redisClient: ReturnType<typeof createClient>,
-  connectionTimeout?: number,
+  { connectionTimeout, incoming }: Options,
 ): Connection => ({
   status: 'ok',
   redisClient,
@@ -15,6 +15,7 @@ const wrapInOk = (
     typeof connectionTimeout === 'number'
       ? Date.now() + connectionTimeout
       : null,
+  ...(incoming ? { incoming } : {}),
 })
 
 const createErrorResponse = () => ({
@@ -56,7 +57,7 @@ async function createConnection(
   })
 
   await client.connect()
-  connection = wrapInOk(client, options.connectionTimeout)
+  connection = wrapInOk(client, options)
   return connection
 }
 

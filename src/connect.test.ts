@@ -205,3 +205,16 @@ test('should return error when no redis options', async (t) => {
   t.deepEqual(ret, expectedConnection)
   t.is(createClient.callCount, 0)
 })
+
+test('should set incoming options', async (t) => {
+  const createClient = sinon.stub().returns(client)
+  const options = {
+    redis: { uri: 'redis://localhost:6379' },
+    incoming: { keyPattern: 'store:user:*' },
+  }
+
+  const ret = await connect(createClient)(options, null, null)
+
+  t.is(ret?.status, 'ok')
+  t.deepEqual(ret?.incoming, options.incoming)
+})
