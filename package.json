@@ -12,7 +12,9 @@
     }
   },
   "scripts": {
-    "test": "c8 --reporter=text-summary ava --config ./ava-dist.config.cjs",
+    "test": "npm run build && c8 --reporter=text-summary ava --config ./ava-dist.config.cjs",
+    "test:setup": "docker-compose up",
+    "test:teardown": "docker-compose down",
     "test:watch": "npm run dev",
     "dev": "ava --watch",
     "build": "tsc",

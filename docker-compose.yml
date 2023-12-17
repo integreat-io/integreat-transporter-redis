@@ -1,0 +1,9 @@
+version: '3.7'
+services:
+  redis:
+    container_name: redis
+    image: redis:6.2-alpine
+    volumes:
+      - ./redisdata:/data
+    ports:
+      - '6379:6379'
