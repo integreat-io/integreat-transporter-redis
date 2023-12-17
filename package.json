@@ -35,13 +35,13 @@
     "debug": "^4.3.4",
     "map-any": "^1.0.0",
     "p-limit": "^4.0.0",
-    "redis": "^4.6.10"
+    "redis": "^4.6.11"
   },
   "devDependencies": {
-    "@integreat/ts-dev-setup": "^5.0.3",
-    "@types/debug": "^4.1.10",
-    "@types/sinon": "^10.0.20",
-    "integreat": "^1.4.2",
+    "@integreat/ts-dev-setup": "^5.0.4",
+    "@types/debug": "^4.1.12",
+    "@types/sinon": "^17.0.2",
+    "integreat": "^1.5.3",
     "sinon": "^17.0.1"
   }
 }
