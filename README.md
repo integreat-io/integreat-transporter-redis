@@ -76,6 +76,10 @@ will dispatch `SET` action to changes to keys matching the pattern.
 
 Note that we only listen for `hset` changes for now.
 
+If the Redis database is not configured to send notifications, it will be
+enabled automatically. The `notify-keyspace-events` `'Eh'` are required, and
+will be added when `listen()` is run.
+
 ### Debugging
 
 Run Integreat with env variable `DEBUG=integreat:transporter:redis`, to receive
