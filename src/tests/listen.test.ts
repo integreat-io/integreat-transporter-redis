@@ -43,7 +43,7 @@ test('should listen and receive item with id on update', async (t) => {
       uri: 'redis://localhost:6379',
     },
     incoming: {
-      keyPattern: 'store:user:*',
+      keyPattern: 'user:*',
     },
   }
   const redisData = { id: 'user1' }

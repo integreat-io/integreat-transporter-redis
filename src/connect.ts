@@ -1,13 +1,23 @@
 import debugFn from 'debug'
 import { createClient } from 'redis'
 import disconnect from './disconnect.js'
-import type { Options, Connection, RedisOptions } from './types.js'
+import { combineHashParts } from './utils/ids.js'
+import type {
+  Options,
+  IncomingOptions,
+  Connection,
+  RedisOptions,
+} from './types.js'
 
 const debug = debugFn('integreat:transporter:redis')
 
+const prepareIncoming = ({ keyPattern }: IncomingOptions, prefix?: string) => ({
+  keyPattern: combineHashParts(prefix, keyPattern),
+})
+
 const wrapInOk = (
   redisClient: ReturnType<typeof createClient>,
-  { connectionTimeout, incoming }: Options,
+  { connectionTimeout, incoming, prefix }: Options,
 ): Connection => ({
   status: 'ok',
   redisClient,
@@ -15,7 +25,7 @@ const wrapInOk = (
     typeof connectionTimeout === 'number'
       ? Date.now() + connectionTimeout
       : null,
-  ...(incoming ? { incoming } : {}),
+  ...(incoming ? { incoming: prepareIncoming(incoming, prefix) } : {}),
 })
 
 const createErrorResponse = () => ({

@@ -212,9 +212,25 @@ test('should set incoming options', async (t) => {
     redis: { uri: 'redis://localhost:6379' },
     incoming: { keyPattern: 'store:user:*' },
   }
+  const expectedIncoming = { keyPattern: 'store:user:*' }
 
   const ret = await connect(createClient)(options, null, null)
 
   t.is(ret?.status, 'ok')
-  t.deepEqual(ret?.incoming, options.incoming)
+  t.deepEqual(ret?.incoming, expectedIncoming)
+})
+
+test('should include prefix from service options in incoming keyPattern', async (t) => {
+  const createClient = sinon.stub().returns(client)
+  const options = {
+    redis: { uri: 'redis://localhost:6379' },
+    incoming: { keyPattern: 'user:*' },
+    prefix: 'store',
+  }
+  const expectedIncoming = { keyPattern: 'store:user:*' }
+
+  const ret = await connect(createClient)(options, null, null)
+
+  t.is(ret?.status, 'ok')
+  t.deepEqual(ret?.incoming, expectedIncoming)
 })

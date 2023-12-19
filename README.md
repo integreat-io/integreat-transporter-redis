@@ -74,7 +74,17 @@ this, set the `keyPattern` in the `incoming` object on `options`. When the
 Integreat instance is set up, call `listen()` on the instance, and Integreat
 will dispatch `SET` action to changes to keys matching the pattern.
 
-Note that we only listen for `hset` changes for now.
+If a `prefix` is set on the service `options`, the `keyPattern` will be prefixed
+with it.
+
+Note that we only listen to one `keyPattern` per service right now, and we
+disregard any `keyPattern` or `prefix` set on endpoint `options`. The dispatched
+action will match any endpoint regardless of what is specified on the endpoint.
+In the future we may allow different patterns and prefixes for different
+endpoints and direct the dispatched action to the correct endpoint, so only
+specify this on the service to make sure you are future compatible.
+
+Also note that we only listen for `hset` changes for now.
 
 If the Redis database is not configured to send notifications, it will be
 enabled automatically. The `notify-keyspace-events` `'Eh'` are required, and
