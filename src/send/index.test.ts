@@ -14,7 +14,7 @@ const wrapInConnection = (redisClient: unknown) =>
   ({
     status: 'ok',
     redisClient,
-  } as Connection)
+  }) as Connection
 
 // Tests -- GET
 
@@ -262,6 +262,37 @@ test('should GET collection from redis with provided pattern', async (t) => {
   t.is(data[0].title, 'Entry 1')
   t.is(data[1].id, 'entry:ent2')
   t.is(data[1].title, 'Entry 2')
+})
+
+test('should GET collection with only ids from redis with provided pattern', async (t) => {
+  const redisClient = {
+    hGetAll: sinon.stub().resolves([]),
+    keys: sinon
+      .stub()
+      .resolves(['store:meta:entry:ent1', 'store:meta:entry:ent2']),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      pattern: 'entry',
+      onlyIds: true,
+    },
+    meta: {
+      options: { prefix: 'store', redis: redisOptions },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.keys.callCount, 1)
+  t.is(redisClient.keys.args[0][0], 'store:meta:entry:*')
+  t.is(redisClient.hGetAll.callCount, 0)
+  const data = ret.data as { id: string; title: string }[]
+  t.is(data.length, 2)
+  t.deepEqual(data[0], { id: 'entry:ent1' })
+  t.deepEqual(data[1], { id: 'entry:ent2' })
 })
 
 test('should return empty error when GET collection yields no ids from redis', async (t) => {

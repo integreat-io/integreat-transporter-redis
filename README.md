@@ -67,6 +67,38 @@ You may choose to set the `uri` or specify the individual properties.
 Redis options can also be given the credentials, i.e. the `key` and `secret`
 values, through an authenticator, like the `options` authenticator.
 
+#### Fetching keys and values
+
+You may fetch a single key from Redis with an `id`, several keys with an array
+of ids on `id`, or all keys starting with the prefix and type (if
+`useTypeAsPrefix` is `true` or not set).
+
+By default, all fields on the key is fetched (using `hgetall`), but you may also
+fetch only the ids of the keys, by setting `onlyIds` to `true`. This does not
+make a lot of sense when you're fetching by id or ids, but could be useful when
+fetching a collection of keys.
+
+Each key is fetched with a separate call to Redis, and you may specify how many
+to fetch in parallel with the `concurrency` option. The default is `1`.
+
+#### Fetching with patterns
+
+In addition, you may fetch keys with a pattern, by setting the `pattern` option
+to a string, which may be one or more key "segments" separated by a colon `':'`.
+This string is appended to the prefix and type (if `useTypeAsPrefix` is `true`
+or not set), and used as a pattern to fetch keys. Behind the scenes `':*'` is
+appended too. For example, if the prefix is `'store'` and the type is
+`'product'`, the pattern `'category:shoes'` will fetch keys with the pattern
+`'store:product:category:shoes:*'`.
+
+This may be combined with `onlyIds` to only fetch the ids of the matching keys.
+
+#### Setting keys and values
+
+When dispatching a `SET` action with one or more data items, the `id` of each
+data item will be used as the key in Redis, possibly prefixed with the `prefix`
+option and the `type` (if `useTypeAsPrefix` is `true` or not set).
+
 #### Listening to changes
 
 The Redis transporter supports listening to changes in the database. To enable

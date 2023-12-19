@@ -60,16 +60,6 @@ test('should set data to redis service', async (t) => {
     payload: {
       type: 'meta',
       data,
-      params: {
-        keys: [
-          'title',
-          'description',
-          'author',
-          'section',
-          'createdAt',
-          'publishedAt',
-        ],
-      },
     },
     meta: { options },
   }

@@ -15,14 +15,15 @@ const numberToString = (value: unknown) =>
   typeof value === 'number'
     ? String(value)
     : typeof value === 'string'
-    ? value
-    : undefined
+      ? value
+      : undefined
 
 const parseAction = ({ payload, meta: { options } = {} }: Action) => ({
   data: payload.data,
   id: filterIfArray(mapAny(numberToString, payload.id)),
   type: payload.type,
   pattern: typeof payload.pattern === 'string' ? payload.pattern : undefined,
+  onlyIds: payload.onlyIds === true,
   prefix: typeof options?.prefix === 'string' ? options?.prefix : undefined,
   concurrency:
     typeof options?.concurrency === 'number' ? options?.concurrency : undefined,
@@ -31,7 +32,7 @@ const parseAction = ({ payload, meta: { options } = {} }: Action) => ({
 
 export default async function send(
   action: Action,
-  connection: Connection | null
+  connection: Connection | null,
 ): Promise<Response> {
   if (!connection || connection.status !== 'ok' || !connection.redisClient) {
     return {
@@ -39,14 +40,22 @@ export default async function send(
       error: "No redis client given to redis transporter's send method",
     }
   }
-  const { data, id, type, pattern, prefix, concurrency, useTypeAsPrefix } =
-    parseAction(action)
+  const {
+    data,
+    id,
+    type,
+    pattern,
+    onlyIds,
+    prefix,
+    concurrency,
+    useTypeAsPrefix,
+  } = parseAction(action)
   const client = connection.redisClient
   const generateIdFn = generateId(prefix, type, useTypeAsPrefix)
 
   switch (action.type) {
     case 'GET':
-      return sendGet(client, generateIdFn, id, pattern, concurrency)
+      return sendGet(client, generateIdFn, id, pattern, onlyIds, concurrency)
     case 'SET':
       return sendSet(client, generateIdFn, id, data, concurrency)
     case 'DELETE':

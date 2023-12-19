@@ -14,7 +14,7 @@ const debug = debugFn('integreat:transporter:redis')
 async function getIds(
   client: ReturnType<typeof createClient>,
   generateId: GenerateId,
-  pattern?: string
+  pattern?: string,
 ) {
   const idPattern = combineHashParts(pattern, '*')
   const findHash = generateId(idPattern)
@@ -34,7 +34,7 @@ async function getIds(
 async function getMember(
   client: ReturnType<typeof createClient>,
   generateId: GenerateId,
-  id: string
+  id: string,
 ) {
   const hash = generateId(id)
 
@@ -49,7 +49,7 @@ async function getMember(
     debug("Redis get with hash '%s' failed: %s", hash, error)
     return createError(
       error as Error,
-      `Error from Redis while getting from hash '${hash}'.`
+      `Error from Redis while getting from hash '${hash}'.`,
     )
   }
 }
@@ -58,7 +58,8 @@ async function getCollection(
   client: ReturnType<typeof createClient>,
   generateId: GenerateId,
   concurrency: number,
-  pattern?: string
+  onlyIds: boolean,
+  pattern?: string,
 ) {
   let ids: string[] = []
   try {
@@ -72,20 +73,24 @@ async function getCollection(
   if (ids.length === 0) {
     return { status: 'ok', data: [] }
   }
-  return sendGet(client, generateId, ids, undefined, concurrency)
+  if (onlyIds) {
+    return { status: 'ok', data: ids.map((id) => ({ id })) }
+  } else {
+    return sendGet(client, generateId, ids, undefined, false, concurrency)
+  }
 }
 
 async function getMembers(
   client: ReturnType<typeof createClient>,
   generateId: GenerateId,
   concurrency: number,
-  ids: string[]
+  ids: string[],
 ) {
   // Sets max concurrency on promises called with `limit()`
   const limit = pLimit(concurrency)
 
   const responses: Response[] = await Promise.all(
-    ids.map((id) => limit(() => getMember(client, generateId, id)))
+    ids.map((id) => limit(() => getMember(client, generateId, id))),
   )
 
   if (responses.every((response) => response.status === 'notfound')) {
@@ -111,11 +116,12 @@ export default async function sendGet(
   generateId: GenerateId,
   id?: string | string[],
   pattern?: string,
-  concurrency = 1
+  onlyIds = false,
+  concurrency = 1,
 ): Promise<Response> {
   if (!id) {
     // Collection
-    return getCollection(client, generateId, concurrency, pattern)
+    return getCollection(client, generateId, concurrency, onlyIds, pattern)
   } else if (Array.isArray(id)) {
     // Members
     return getMembers(client, generateId, concurrency, id)
