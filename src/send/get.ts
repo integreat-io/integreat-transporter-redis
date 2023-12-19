@@ -73,6 +73,7 @@ async function getCollection(
   if (ids.length === 0) {
     return { status: 'ok', data: [] }
   }
+  ids.sort()
   if (onlyIds) {
     return { status: 'ok', data: ids.map((id) => ({ id })) }
   } else {

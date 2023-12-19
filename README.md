@@ -71,7 +71,8 @@ values, through an authenticator, like the `options` authenticator.
 
 You may fetch a single key from Redis with an `id`, several keys with an array
 of ids on `id`, or all keys starting with the prefix and type (if
-`useTypeAsPrefix` is `true` or not set).
+`useTypeAsPrefix` is `true` or not set). When fetching all keys, the keys will
+be sorted alphabetically.
 
 By default, all fields on the key is fetched (using `hgetall`), but you may also
 fetch only the ids of the keys, by setting `onlyIds` to `true`. This does not
@@ -90,6 +91,8 @@ or not set), and used as a pattern to fetch keys. Behind the scenes `':*'` is
 appended too. For example, if the prefix is `'store'` and the type is
 `'product'`, the pattern `'category:shoes'` will fetch keys with the pattern
 `'store:product:category:shoes:*'`.
+
+The keys will be sorted alphabetically.
 
 This may be combined with `onlyIds` to only fetch the ids of the matching keys.
 

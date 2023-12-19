@@ -182,6 +182,38 @@ test('should GET collection from redis', async (t) => {
   t.is(data[1].title, 'Entry 2')
 })
 
+test('should GET collection from redis with keys sorted alphabetically', async (t) => {
+  const redisClient = {
+    hGetAll: sinon
+      .stub()
+      .resolves([])
+      .onCall(0)
+      .resolves([{ title: 'Entry 1' }])
+      .onCall(1)
+      .resolves([{ title: 'Entry 2' }]),
+    keys: sinon.stub().resolves(['meta:users', 'meta:entries']),
+  }
+  const action = {
+    type: 'GET',
+    payload: {
+      type: 'meta',
+      // No id => collection
+    },
+    meta: {
+      options: { redis: redisOptions },
+    },
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  t.is(ret.status, 'ok', ret.error)
+  t.is(redisClient.keys.callCount, 1)
+  t.is(redisClient.hGetAll.callCount, 2)
+  const data = ret.data as { id: string; title: string }[]
+  t.is(data[0].id, 'entries')
+  t.is(data[1].id, 'users')
+})
+
 test('should GET collection from redis with prefix as wildcard', async (t) => {
   const redisData0 = [{ title: 'Entry 1' }]
   const redisData1 = [{ title: 'Entry 2' }]
