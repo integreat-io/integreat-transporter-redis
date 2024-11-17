@@ -53,6 +53,22 @@ Example source configuration:
 }
 ```
 
+Available options:
+
+- `useTypeAsPrefix`: When set to `true`, the key will be made up of
+  `<type>:<id>`, where `type` and `id` are properties on the action `payload`.
+  Otherwise, the key will just be the `id`. Default is `true`.
+- `prefix`: A prefix used with all Redis keys. The prefix and the key will be
+  separated by colon `:`. This prefix is added even when `useTypeAsPrefix` is
+  `true` and comes in from of the type prefix. Default is no prefix.
+- `concurrency`: When fetching more keys in one action, you may specify how many
+   to fetch in parallel with the `concurrency` option. The default is `1`,
+   meaning they will be fetching in sequence.
+- `connectionTimeout`: When set to a number of milliseconds, the Redis
+  connection will be renewed after this timeout regardless of the state of the
+  connection.
+- `incoming`: See [Listening to changes](#listening-to-changes) below.
+
 The available properties for the `redis` options object are as follow:
 
 - `uri`: The entire URL of Redis database
