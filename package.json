@@ -1,6 +1,6 @@
 {
   "name": "integreat-transporter-redis",
-  "version": "1.2.0",
+  "version": "1.3.0-beta.0",
   "description": "Redis transporter for Integreat",
   "author": "Kjell-Morten Bratsberg Thorsen <kjellmorten@integreat.io> (https://integreat.io/)",
   "license": "ISC",
