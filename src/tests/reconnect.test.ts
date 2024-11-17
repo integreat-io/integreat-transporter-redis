@@ -23,8 +23,8 @@ test.serial(
     }
 
     const pingAction = {
-      type: 'PING',
-      payload: {},
+      type: 'SERVICE',
+      payload: { type: 'ping' },
       meta: {},
     }
     const connection = await transporter.connect(options, null, null, emit)
