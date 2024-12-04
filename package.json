@@ -1,6 +1,6 @@
 {
   "name": "integreat-transporter-redis",
-  "version": "1.2.0",
+  "version": "1.3.0-beta.0",
   "description": "Redis transporter for Integreat",
   "author": "Kjell-Morten Bratsberg Thorsen <kjellmorten@integreat.io> (https://integreat.io/)",
   "license": "ISC",
@@ -13,10 +13,14 @@
   },
   "scripts": {
     "test": "npm run build && c8 --reporter=text-summary ava --config ./ava-dist.config.cjs",
-    "test:setup": "docker-compose up",
-    "test:teardown": "docker-compose down",
+    "pretest": "docker compose up --detach && wait-on --log --timeout 30000 tcp:localhost:6379",
+    "posttest": "docker compose down",
+    "test:setup": "docker compose up",
+    "test:teardown": "docker compose down",
     "test:watch": "npm run dev",
-    "dev": "ava --watch",
+    "dev": "ava --watch || exit 0",
+    "predev": "npm run pretest",
+    "postdev": "npm run posttest",
     "build": "tsc",
     "coverage": "c8 report",
     "lint": "eslint --ext .ts src",
@@ -42,8 +46,11 @@
   "devDependencies": {
     "@integreat/ts-dev-setup": "^5.0.4",
     "@types/debug": "^4.1.12",
+    "@types/dockerode": "^3.3.31",
     "@types/sinon": "^17.0.2",
+    "dockerode": "^4.0.2",
     "integreat": "^1.5.4",
-    "sinon": "^17.0.1"
+    "sinon": "^17.0.1",
+    "wait-on": "^8.0.1"
   }
 }

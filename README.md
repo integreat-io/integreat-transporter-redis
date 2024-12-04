@@ -118,6 +118,20 @@ When dispatching a `SET` action with one or more data items, the `id` of each
 data item will be used as the key in Redis, possibly prefixed with the `prefix`
 option and the `type` (if `useTypeAsPrefix` is `true` or not set).
 
+#### Pinging Redis
+
+To send a [PING command](https://redis.io/docs/latest/commands/ping/) to Redis,
+dispatch a `SERVICE` action with type `ping`:
+
+```javascript
+const response = await great.dispatch({
+  type: 'SERVICE',
+  payload: { type: 'ping' },
+})
+```
+
+`response.data` will hold the response data from Redis.
+
 #### Listening to changes
 
 The Redis transporter supports listening to changes in the database. To enable
