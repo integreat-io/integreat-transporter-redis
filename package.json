@@ -38,19 +38,19 @@
     "node": ">= 18"
   },
   "dependencies": {
-    "debug": "^4.3.4",
+    "debug": "^4.3.7",
     "map-any": "^1.0.0",
-    "p-limit": "^4.0.0",
-    "redis": "^4.6.12"
+    "p-limit": "^6.1.0",
+    "redis": "^4.7.0"
   },
   "devDependencies": {
     "@integreat/ts-dev-setup": "^5.0.4",
     "@types/debug": "^4.1.12",
-    "@types/dockerode": "^3.3.31",
-    "@types/sinon": "^17.0.2",
+    "@types/dockerode": "^3.3.32",
+    "@types/sinon": "^17.0.3",
     "dockerode": "^4.0.2",
-    "integreat": "^1.5.4",
-    "sinon": "^17.0.1",
+    "integreat": "^1.5.10",
+    "sinon": "^19.0.2",
     "wait-on": "^8.0.1"
   }
 }
