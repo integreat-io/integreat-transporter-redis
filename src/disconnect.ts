@@ -1,38 +1,39 @@
 import debugFn from 'debug'
 import { setTimeout } from 'timers/promises'
 import type { Connection } from './types.js'
+import type { createClient } from 'redis'
 
 const debug = debugFn('integreat:transporter:redis')
 
-export default async function disconnect(
+export default async function disconnect2(
   connection: Connection | null,
 ): Promise<void> {
-  if (connection && connection.status === 'ok' && connection.redisClient) {
+  if (connection === null) {
+    debug('disconnect: connection is null')
+    return
+  }
+  if (connection.redisClient === null) {
+    debug('disconnect: connection.redisClient is null')
+    return
+  }
+  if (connection.redisClient === undefined) {
+    debug('disconnect: connection.redisClient is undefined')
+    return
+  }
+  await Promise.race([redisDisconnect(connection.redisClient), setTimeout(100)])
+  debug('disconnect: setting connection.redisClient to null')
+  connection.redisClient = null
+}
+
+const redisDisconnect = async (
+  redisClient: ReturnType<typeof createClient>,
+) => {
+  try {
+    debug('disconnect - tryRedisDisconnect: disconnecting the redisClient')
+    await redisClient.disconnect()
+  } catch (e) {
     debug(
-      `Disconnect Redis client if still ready [isOpen=${connection.redisClient.isOpen}, isReady=${connection.redisClient.isReady}]`,
+      `disconnect - tryRedisDisconnect: error on redisClient.disconnect: ${e}`,
     )
-    if (connection.redisClient.isReady) {
-      debug('Attempting to disconnect Redis client calling redisClient.quit()')
-      try {
-        const timeoutMessage = 'redisClient.quit() timed out'
-        const result = await Promise.race([
-          connection.redisClient.quit(),
-          // TODO: Make this timeout configurable too maybe?
-          setTimeout(100, timeoutMessage),
-        ])
-        if (result === timeoutMessage) {
-          debug(
-            'Timed out while calling redisClient.quit(), the connection is already closed',
-          )
-        }
-      } catch (error) {
-        debug(
-          'Failed to call redisClient.quit(), ignoring the error as the connection is already closed:',
-          error,
-        )
-      }
-    }
-    debug('Setting connection.redisClient to null')
-    connection.redisClient = null
   }
 }

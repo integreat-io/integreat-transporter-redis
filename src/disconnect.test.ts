@@ -8,7 +8,7 @@ import disconnect from './disconnect.js'
 
 test('should call quit on redis client', async (t) => {
   const redisClient = {
-    quit: sinon.stub().resolves(),
+    disconnect: sinon.stub().resolves(),
     isReady: true,
   }
   const connection = {
@@ -18,13 +18,13 @@ test('should call quit on redis client', async (t) => {
 
   await disconnect(connection)
 
-  t.is(redisClient.quit.callCount, 1)
+  t.is(redisClient.disconnect.callCount, 1)
   t.is(connection.redisClient, null)
 })
 
 test('should handle that quit throws even though client reports isReady', async (t) => {
   const redisClient = {
-    quit: sinon.stub().throws('Error'),
+    disconnect: sinon.stub().throws('Error'),
     isReady: true,
   }
   const connection = {
@@ -34,7 +34,7 @@ test('should handle that quit throws even though client reports isReady', async 
 
   await disconnect(connection)
 
-  t.is(redisClient.quit.callCount, 1)
+  t.is(redisClient.disconnect.callCount, 1)
   t.is(connection.redisClient, null)
 })
 

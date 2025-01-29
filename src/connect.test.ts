@@ -167,16 +167,16 @@ test('should reconnect when a connection is missing client', async (t) => {
 })
 
 test('should reconnect when connection is expired', async (t) => {
-  const clientWithQuit = {
+  const clientWithDisconnect = {
     ...client,
-    quit: sinon.stub().resolves(),
+    disconnect: sinon.stub().resolves(),
     isReady: true,
   }
   const createClient = sinon.stub().returns(client)
   const options = { redis: { uri: 'redis://localhost:6379' } }
   const connection = {
     status: 'ok',
-    redisClient: clientWithQuit,
+    redisClient: clientWithDisconnect,
     expire: Date.now() - 1000,
   }
 
@@ -189,7 +189,7 @@ test('should reconnect when connection is expired', async (t) => {
   t.is(ret?.status, 'ok')
   t.is(ret?.redisClient, client)
   t.is(createClient.callCount, 1)
-  t.is(clientWithQuit.quit.callCount, 1)
+  t.is(clientWithDisconnect.disconnect.callCount, 1)
 })
 
 test('should return error when no redis options', async (t) => {
