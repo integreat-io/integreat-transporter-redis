@@ -5,7 +5,7 @@ import type { createClient } from 'redis'
 
 const debug = debugFn('integreat:transporter:redis')
 
-export default async function disconnect2(
+export default async function disconnect(
   connection: Connection | null,
 ): Promise<void> {
   if (connection === null) {
@@ -29,11 +29,9 @@ const redisDisconnect = async (
   redisClient: ReturnType<typeof createClient>,
 ) => {
   try {
-    debug('disconnect - tryRedisDisconnect: disconnecting the redisClient')
+    debug('disconnect - redisDisconnect: disconnecting the redisClient')
     await redisClient.disconnect()
   } catch (e) {
-    debug(
-      `disconnect - tryRedisDisconnect: error on redisClient.disconnect: ${e}`,
-    )
+    debug(`disconnect - redisDisconnect: error on redisClient.disconnect: ${e}`)
   }
 }
