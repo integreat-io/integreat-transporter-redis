@@ -5,26 +5,6 @@ import type { createClient } from 'redis'
 
 const debug = debugFn('integreat:transporter:redis')
 
-export default async function disconnect(
-  connection: Connection | null,
-): Promise<void> {
-  if (connection === null) {
-    debug('disconnect: connection is null')
-    return
-  }
-  if (connection.redisClient === null) {
-    debug('disconnect: connection.redisClient is null')
-    return
-  }
-  if (connection.redisClient === undefined) {
-    debug('disconnect: connection.redisClient is undefined')
-    return
-  }
-  await Promise.race([redisDisconnect(connection.redisClient), setTimeout(100)])
-  debug('disconnect: setting connection.redisClient to null')
-  connection.redisClient = null
-}
-
 const redisDisconnect = async (
   redisClient: ReturnType<typeof createClient>,
 ) => {
@@ -34,4 +14,22 @@ const redisDisconnect = async (
   } catch (e) {
     debug(`disconnect - redisDisconnect: error on redisClient.disconnect: ${e}`)
   }
+}
+
+/**
+ * Disconnect. Will try and disconnect the redisClient, but timeout after 100ms.
+ */
+export default async function disconnect(
+  connection: Connection | null,
+): Promise<void> {
+  if (!connection || !connection.redisClient) {
+    debug('disconnect: No connection or redisClient')
+    return
+  }
+
+  // Disconnect the redisClient, but timeout after 100ms
+  await Promise.race([redisDisconnect(connection.redisClient), setTimeout(100)])
+
+  debug('disconnect: setting connection.redisClient to null')
+  connection.redisClient = null
 }
