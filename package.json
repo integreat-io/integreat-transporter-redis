@@ -39,18 +39,18 @@
   },
   "dependencies": {
     "@redis/client": "^1.6.0",
-    "debug": "^4.3.7",
+    "debug": "^4.4.0",
     "map-any": "^1.0.0",
-    "p-limit": "^6.1.0"
+    "p-limit": "^6.2.0"
   },
   "devDependencies": {
     "@integreat/ts-dev-setup": "^5.0.4",
     "@types/debug": "^4.1.12",
-    "@types/dockerode": "^3.3.32",
+    "@types/dockerode": "^3.3.34",
     "@types/sinon": "^17.0.3",
-    "dockerode": "^4.0.2",
-    "integreat": "^1.5.10",
+    "dockerode": "^4.0.4",
+    "integreat": "^1.5.12",
     "sinon": "^19.0.2",
-    "wait-on": "^8.0.1"
+    "wait-on": "^8.0.2"
   }
 }
