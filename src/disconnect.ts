@@ -1,7 +1,7 @@
 import debugFn from 'debug'
 import { setTimeout } from 'timers/promises'
 import type { Connection } from './types.js'
-import type { createClient } from 'redis'
+import type { createClient } from '@redis/client'
 
 const debug = debugFn('integreat:transporter:redis')
 

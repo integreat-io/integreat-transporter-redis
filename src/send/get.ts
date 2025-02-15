@@ -6,7 +6,7 @@ import { isErrorResponse } from '../utils/is.js'
 import { createError, joinErrors } from '../utils/error.js'
 import { combineHashParts } from '../utils/ids.js'
 import type { Response } from 'integreat'
-import type { createClient } from 'redis'
+import type { createClient } from '@redis/client'
 import type { GenerateId } from '../types.js'
 
 const debug = debugFn('integreat:transporter:redis')

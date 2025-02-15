@@ -1,5 +1,5 @@
 import ava, { TestFn } from 'ava'
-import { createClient } from 'redis'
+import { createClient } from '@redis/client'
 import transporter from '../index.js'
 
 interface RedisContext {

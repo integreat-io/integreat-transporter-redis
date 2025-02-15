@@ -1,6 +1,6 @@
 import test from 'ava'
 import Docker from 'dockerode'
-import { createClient } from 'redis'
+import { createClient } from '@redis/client'
 import { setTimeout as sleep } from 'timers/promises'
 
 import transporter from '../index.js'

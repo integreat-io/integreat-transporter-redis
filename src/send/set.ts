@@ -4,7 +4,7 @@ import { serializeData } from '../utils/normalize.js'
 import { isObject } from '../utils/is.js'
 import { createError } from '../utils/error.js'
 import type { Response } from 'integreat'
-import type { createClient } from 'redis'
+import type { createClient } from '@redis/client'
 import type { GenerateId } from '../types.js'
 
 const debug = debugFn('integreat:transporter:redis')
@@ -13,14 +13,14 @@ const itemToArray = (fields: Record<string, unknown>) =>
   Object.entries(fields).reduce(
     (arr, [key, value]) =>
       value === undefined ? arr : [...arr, key, serializeData(value)],
-    [] as string[]
+    [] as string[],
   )
 
 async function setItem(
   client: ReturnType<typeof createClient>,
   generateId: GenerateId,
   item: Record<string, unknown>,
-  id?: string | null
+  id?: string | null,
 ): Promise<Response> {
   const { id: itemId, ...fields } = item
   id = (itemId as string | null | undefined) || id
@@ -39,7 +39,7 @@ async function setItem(
     debug("Redis set with hash '%s' failed: %s", hash, error)
     return createError(
       error as Error,
-      `Error from Redis while setting on hash '${hash}'.`
+      `Error from Redis while setting on hash '${hash}'.`,
     )
   }
 }
@@ -64,7 +64,7 @@ export default async function sendSet(
   generateId: GenerateId,
   id: string | string[] | null | undefined,
   data: unknown,
-  concurrency = 1
+  concurrency = 1,
 ) {
   if (Array.isArray(id)) {
     return {
@@ -81,7 +81,7 @@ export default async function sendSet(
   // Sets max concurrency on promises called with `limit()`
   const limit = pLimit(concurrency)
   const results = await Promise.all(
-    items.map((item) => limit(() => setItem(client, generateId, item, id)))
+    items.map((item) => limit(() => setItem(client, generateId, item, id))),
   )
 
   return generateResponse(results)

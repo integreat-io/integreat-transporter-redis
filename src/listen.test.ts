@@ -1,6 +1,6 @@
 import test from 'ava'
 import sinon from 'sinon'
-import type { createClient } from 'redis'
+import type { createClient } from '@redis/client'
 
 import listen from './listen.js'
 

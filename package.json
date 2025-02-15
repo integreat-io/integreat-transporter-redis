@@ -38,10 +38,10 @@
     "node": ">= 18"
   },
   "dependencies": {
+    "@redis/client": "^1.6.0",
     "debug": "^4.3.7",
     "map-any": "^1.0.0",
-    "p-limit": "^6.1.0",
-    "redis": "^4.7.0"
+    "p-limit": "^6.1.0"
   },
   "devDependencies": {
     "@integreat/ts-dev-setup": "^5.0.4",

@@ -1,4 +1,4 @@
-import { createClient } from 'redis'
+import { createClient } from '@redis/client'
 import connect from './connect.js'
 import disconnect from './disconnect.js'
 import send from './send/index.js'

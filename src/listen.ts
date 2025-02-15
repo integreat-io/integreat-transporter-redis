@@ -4,7 +4,7 @@ import type {
   Response,
   AuthenticateExternal,
 } from 'integreat'
-import type { createClient } from 'redis'
+import type { createClient } from '@redis/client'
 import type { Connection } from './types.js'
 
 const extractError = (error: unknown): string =>

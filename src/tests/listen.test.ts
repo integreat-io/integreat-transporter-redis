@@ -1,7 +1,7 @@
 import { scheduler } from 'node:timers/promises'
 import ava, { TestFn } from 'ava'
 import sinon from 'sinon'
-import { createClient } from 'redis'
+import { createClient } from '@redis/client'
 
 import transporter from '../index.js'
 

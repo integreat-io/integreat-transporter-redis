@@ -1,4 +1,4 @@
-import type { createClient } from 'redis'
+import type { createClient } from '@redis/client'
 
 export interface GenerateId {
   (id: string, type?: string): string

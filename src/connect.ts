@@ -1,5 +1,5 @@
 import debugFn from 'debug'
-import { createClient } from 'redis'
+import { createClient } from '@redis/client'
 import disconnect from './disconnect.js'
 import { combineHashParts } from './utils/ids.js'
 import type {

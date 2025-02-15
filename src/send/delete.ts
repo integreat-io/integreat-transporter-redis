@@ -1,7 +1,7 @@
 import debugFn from 'debug'
 import { isObject } from '../utils/is.js'
 import { createError } from '../utils/error.js'
-import type { createClient } from 'redis'
+import type { createClient } from '@redis/client'
 import type { GenerateId } from '../types.js'
 
 const debug = debugFn('integreat:transporter:redis')
@@ -15,7 +15,7 @@ const idAndTypeFromItem = (item: unknown) =>
   isObject(item) ? [item.id, item.$type] : undefined
 
 const extractIdsAndTypeFromData = (
-  data: unknown
+  data: unknown,
 ): [string, string | undefined][] =>
   (Array.isArray(data)
     ? data.map(idAndTypeFromItem)
@@ -24,7 +24,7 @@ const extractIdsAndTypeFromData = (
 
 function extractIdsAndTypes(
   data: unknown,
-  id?: string | string[] | null
+  id?: string | string[] | null,
 ): IdTypeTuple[] {
   const idTypes: IdTypeTuple[] = extractIdsAndTypeFromData(data).filter(Boolean)
   if (idTypes.length === 0 && id) {
@@ -40,7 +40,7 @@ export default async function sendDel(
   client: ReturnType<typeof createClient>,
   generateId: GenerateId,
   id: string | string[] | null | undefined,
-  data: unknown
+  data: unknown,
 ) {
   const idTypes = extractIdsAndTypes(data, id)
   if (idTypes.length === 0) {
@@ -58,7 +58,7 @@ export default async function sendDel(
     debug("Failed to delete hashes '%s' from Redis: %s", keys, error)
     return createError(
       error as Error,
-      `Error from Redis while deleting hashes '${keys.join("', '")}'.`
+      `Error from Redis while deleting hashes '${keys.join("', '")}'.`,
     )
   }
 }
