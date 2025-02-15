@@ -1,3 +1,4 @@
+import { scheduler } from 'node:timers/promises'
 import ava, { TestFn } from 'ava'
 import sinon from 'sinon'
 import { createClient } from 'redis'
@@ -56,6 +57,7 @@ test('should listen and receive item with id on update', async (t) => {
   const connection = await transporter.connect(options, null, null, emit)
   const ret = await transporter.listen!(dispatch, connection, authenticate)
   await redisClient.hSet('store:user:user1', redisData)
+  await scheduler.wait(500) // Wait to make sure the change is made before we disconnect
   await transporter.disconnect(connection)
 
   t.is(ret.status, 'ok', ret.error)
