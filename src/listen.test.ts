@@ -1,4 +1,5 @@
-import test from 'ava'
+import test from 'node:test'
+import assert from 'node:assert/strict'
 import sinon from 'sinon'
 import type { createClient } from '@redis/client'
 
@@ -16,7 +17,7 @@ const configSet = async () => 'OK'
 
 // Tests -- listen
 
-test('should create a stand-alone client, subscribe to hset events, and return ok', async (t) => {
+test('should create a stand-alone client, subscribe to hset events, and return ok', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -44,18 +45,18 @@ test('should create a stand-alone client, subscribe to hset events, and return o
 
   const ret = await listen(dispatch, connection, authenticate)
 
-  t.deepEqual(ret, expected)
-  t.is(configGetStub.callCount, 1)
-  t.is(configSetStub.callCount, 0) // No need to set config when already set
-  t.is(duplicateStub.callCount, 1)
-  t.is(connectStub.callCount, 1)
-  t.is(subscribeStub.callCount, 1)
-  t.is(subscribeStub.args[0][0], '__keyevent@0__:hset')
-  t.is(typeof subscribeStub.args[0][1], 'function') // Listener
-  t.is(dispatch.callCount, 0) // No dispatching without requests
+  assert.deepEqual(ret, expected)
+  assert.equal(configGetStub.callCount, 1)
+  assert.equal(configSetStub.callCount, 0) // No need to set config when already set
+  assert.equal(duplicateStub.callCount, 1)
+  assert.equal(connectStub.callCount, 1)
+  assert.equal(subscribeStub.callCount, 1)
+  assert.equal(subscribeStub.args[0][0], '__keyevent@0__:hset')
+  assert.equal(typeof subscribeStub.args[0][1], 'function') // Listener
+  assert.equal(dispatch.callCount, 0) // No dispatching without requests
 })
 
-test('should respond with error when client', async (t) => {
+test('should respond with error when client', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -70,11 +71,11 @@ test('should respond with error when client', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
 
-  t.deepEqual(ret, expected)
-  t.is(dispatch.callCount, 0) // No dispatching without requests
+  assert.deepEqual(ret, expected)
+  assert.equal(dispatch.callCount, 0) // No dispatching without requests
 })
 
-test('should respond with error when connection fails', async (t) => {
+test('should respond with error when connection fails', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -101,14 +102,14 @@ test('should respond with error when connection fails', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
 
-  t.deepEqual(ret, expected)
-  t.is(duplicateStub.callCount, 1)
-  t.is(connectStub.callCount, 1)
-  t.is(subscribeStub.callCount, 0)
-  t.is(dispatch.callCount, 0)
+  assert.deepEqual(ret, expected)
+  assert.equal(duplicateStub.callCount, 1)
+  assert.equal(connectStub.callCount, 1)
+  assert.equal(subscribeStub.callCount, 0)
+  assert.equal(dispatch.callCount, 0)
 })
 
-test('should respond with error when subscription fails', async (t) => {
+test('should respond with error when subscription fails', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -135,16 +136,16 @@ test('should respond with error when subscription fails', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
 
-  t.deepEqual(ret, expected)
-  t.is(duplicateStub.callCount, 1)
-  t.is(connectStub.callCount, 1)
-  t.is(subscribeStub.callCount, 1)
-  t.is(dispatch.callCount, 0)
+  assert.deepEqual(ret, expected)
+  assert.equal(duplicateStub.callCount, 1)
+  assert.equal(connectStub.callCount, 1)
+  assert.equal(subscribeStub.callCount, 1)
+  assert.equal(dispatch.callCount, 0)
 })
 
 // Tests -- config
 
-test('should enable required keyspace notification in Redis if needed', async (t) => {
+test('should enable required keyspace notification in Redis if needed', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -170,15 +171,15 @@ test('should enable required keyspace notification in Redis if needed', async (t
 
   const ret = await listen(dispatch, connection, authenticate)
 
-  t.deepEqual(ret, expected)
-  t.is(configGetStub.callCount, 1)
-  t.is(configGetStub.args[0][0], 'notify-keyspace-events')
-  t.is(configSetStub.callCount, 1)
-  t.is(configSetStub.args[0][0], 'notify-keyspace-events')
-  t.is(configSetStub.args[0][1], 'Eh')
+  assert.deepEqual(ret, expected)
+  assert.equal(configGetStub.callCount, 1)
+  assert.equal(configGetStub.args[0][0], 'notify-keyspace-events')
+  assert.equal(configSetStub.callCount, 1)
+  assert.equal(configSetStub.args[0][0], 'notify-keyspace-events')
+  assert.equal(configSetStub.args[0][1], 'Eh')
 })
 
-test('should keep other keyspace notification letters', async (t) => {
+test('should keep other keyspace notification letters', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -206,15 +207,15 @@ test('should keep other keyspace notification letters', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
 
-  t.deepEqual(ret, expected)
-  t.is(configGetStub.callCount, 1)
-  t.is(configGetStub.args[0][0], 'notify-keyspace-events')
-  t.is(configSetStub.callCount, 1)
-  t.is(configSetStub.args[0][0], 'notify-keyspace-events')
-  t.is(configSetStub.args[0][1], 'KgEh')
+  assert.deepEqual(ret, expected)
+  assert.equal(configGetStub.callCount, 1)
+  assert.equal(configGetStub.args[0][0], 'notify-keyspace-events')
+  assert.equal(configSetStub.callCount, 1)
+  assert.equal(configSetStub.args[0][0], 'notify-keyspace-events')
+  assert.equal(configSetStub.args[0][1], 'KgEh')
 })
 
-test('should update when only one letter is missing', async (t) => {
+test('should update when only one letter is missing', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -242,17 +243,17 @@ test('should update when only one letter is missing', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
 
-  t.deepEqual(ret, expected)
-  t.is(configGetStub.callCount, 1)
-  t.is(configGetStub.args[0][0], 'notify-keyspace-events')
-  t.is(configSetStub.callCount, 1)
-  t.is(configSetStub.args[0][0], 'notify-keyspace-events')
-  t.is(configSetStub.args[0][1], 'KEgh')
+  assert.deepEqual(ret, expected)
+  assert.equal(configGetStub.callCount, 1)
+  assert.equal(configGetStub.args[0][0], 'notify-keyspace-events')
+  assert.equal(configSetStub.callCount, 1)
+  assert.equal(configSetStub.args[0][0], 'notify-keyspace-events')
+  assert.equal(configSetStub.args[0][1], 'KEgh')
 })
 
 // Tests -- dispatch
 
-test('should dispatch SET action when key matching pattern is updated with hset', async (t) => {
+test('should dispatch SET action when key matching pattern is updated with hset', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -280,17 +281,17 @@ test('should dispatch SET action when key matching pattern is updated with hset'
 
   const ret = await listen(dispatch, connection, authenticate)
   const listener = subscribeStub.args[0][1]
-  t.is(typeof listener, 'function')
+  assert.equal(typeof listener, 'function')
   if (typeof listener === 'function') {
     await listener('store:user:user1', '__keyevent@0__:hset')
   }
 
-  t.deepEqual(ret, { status: 'ok' })
-  t.is(dispatch.callCount, 1)
-  t.deepEqual(dispatch.args[0][0], expectedAction)
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(dispatch.callCount, 1)
+  assert.deepEqual(dispatch.args[0][0], expectedAction)
 })
 
-test('should not dispatch when key is not matching pattern', async (t) => {
+test('should not dispatch when key is not matching pattern', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -313,16 +314,16 @@ test('should not dispatch when key is not matching pattern', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
   const listener = subscribeStub.args[0][1]
-  t.is(typeof listener, 'function')
+  assert.equal(typeof listener, 'function')
   if (typeof listener === 'function') {
     await listener('store:something:unknown1', '__keyevent@0__:hset')
   }
 
-  t.deepEqual(ret, { status: 'ok' })
-  t.is(dispatch.callCount, 0)
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(dispatch.callCount, 0)
 })
 
-test('should match key with non-wildcard pattern', async (t) => {
+test('should match key with non-wildcard pattern', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -350,17 +351,17 @@ test('should match key with non-wildcard pattern', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
   const listener = subscribeStub.args[0][1]
-  t.is(typeof listener, 'function')
+  assert.equal(typeof listener, 'function')
   if (typeof listener === 'function') {
     await listener('store:user:user2', '__keyevent@0__:hset')
   }
 
-  t.deepEqual(ret, { status: 'ok' })
-  t.is(dispatch.callCount, 1)
-  t.deepEqual(dispatch.args[0][0], expectedAction)
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(dispatch.callCount, 1)
+  assert.deepEqual(dispatch.args[0][0], expectedAction)
 })
 
-test('should not match key that start with pattern when non-wildcard pattern', async (t) => {
+test('should not match key that start with pattern when non-wildcard pattern', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -383,16 +384,16 @@ test('should not match key that start with pattern when non-wildcard pattern', a
 
   const ret = await listen(dispatch, connection, authenticate)
   const listener = subscribeStub.args[0][1]
-  t.is(typeof listener, 'function')
+  assert.equal(typeof listener, 'function')
   if (typeof listener === 'function') {
     await listener('store:user:user22', '__keyevent@0__:hset') // Should not match without wildcard
   }
 
-  t.deepEqual(ret, { status: 'ok' })
-  t.is(dispatch.callCount, 0)
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(dispatch.callCount, 0)
 })
 
-test('should match everything with wildcard only pattern', async (t) => {
+test('should match everything with wildcard only pattern', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -424,17 +425,17 @@ test('should match everything with wildcard only pattern', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
   const listener = subscribeStub.args[0][1]
-  t.is(typeof listener, 'function')
+  assert.equal(typeof listener, 'function')
   if (typeof listener === 'function') {
     await listener('store:user:user22', '__keyevent@0__:hset')
   }
 
-  t.deepEqual(ret, { status: 'ok' })
-  t.is(dispatch.callCount, 1)
-  t.deepEqual(dispatch.args[0][0], expectedAction)
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(dispatch.callCount, 1)
+  assert.deepEqual(dispatch.args[0][0], expectedAction)
 })
 
-test('should dispatch auth error', async (t) => {
+test('should dispatch auth error', async () => {
   const authenticate = async () => ({
     status: 'noaccess',
     error: 'Not authorized',
@@ -472,12 +473,12 @@ test('should dispatch auth error', async (t) => {
 
   const ret = await listen(dispatch, connection, authenticate)
   const listener = subscribeStub.args[0][1]
-  t.is(typeof listener, 'function')
+  assert.equal(typeof listener, 'function')
   if (typeof listener === 'function') {
     await listener('store:user:user1', '__keyevent@0__:hset')
   }
 
-  t.deepEqual(ret, { status: 'ok' })
-  t.is(dispatch.callCount, 1)
-  t.deepEqual(dispatch.args[0][0], expectedAction)
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(dispatch.callCount, 1)
+  assert.deepEqual(dispatch.args[0][0], expectedAction)
 })

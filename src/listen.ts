@@ -118,6 +118,7 @@ export default async function listen(
   const keyPattern = connection.incoming?.keyPattern || '' // Default keyPattern to empty string
   const [keyPrefix, isPattern] = extractKeyPrefix(keyPattern)
   const isSubscribedKey = createKeyMatcher(keyPrefix, keyPattern, isPattern)
+  connection.redisSubscriber = subscriber
 
   const listener = createListener(
     dispatch,

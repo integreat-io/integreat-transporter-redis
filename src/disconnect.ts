@@ -30,6 +30,14 @@ export default async function disconnect(
   // Disconnect the redisClient, but timeout after 100ms
   await Promise.race([redisDisconnect(connection.redisClient), setTimeout(100)])
 
+  // Disconnect the redisSubscriber client, but timeout after 100ms
+  if (connection.redisSubscriber) {
+    await Promise.race([
+      redisDisconnect(connection.redisSubscriber),
+      setTimeout(100),
+    ])
+  }
+
   debug('disconnect: setting connection.redisClient to null')
   connection.redisClient = null
 }

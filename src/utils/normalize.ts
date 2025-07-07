@@ -3,7 +3,7 @@ import { isObject, isDate } from './is.js'
 function normalizeValue(value: string) {
   try {
     return value === '##null##' ? null : JSON.parse(value)
-  } catch (err) {
+  } catch {
     return value
   }
 }
@@ -11,7 +11,7 @@ function normalizeValue(value: string) {
 export const normalizeData = (id: string) => (data: Record<string, string>) =>
   Object.entries(data).reduce(
     (data, [key, value]) => ({ id, ...data, [key]: normalizeValue(value) }),
-    {}
+    {},
   )
 
 const serializeObject = (value: Record<string, unknown>) =>

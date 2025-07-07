@@ -1,17 +1,17 @@
-import test from 'ava'
+import test from 'node:test'
+import assert from 'node:assert/strict'
 import Docker from 'dockerode'
-import { createClient } from '@redis/client'
 import { setTimeout as sleep } from 'timers/promises'
 
 import transporter from '../index.js'
 
+// Setup
+
 const emit = () => undefined
 
-test('should be able to reconnect to Redis if the server has disconnected', async (t) => {
-  // Create and connect the RedisClient
-  const redisClient = createClient()
-  await redisClient.connect()
+// Tests
 
+test('should be able to reconnect to Redis if the server has disconnected', async (t) => {
   const options = {
     prefix: 'store',
     redis: {
@@ -26,6 +26,9 @@ test('should be able to reconnect to Redis if the server has disconnected', asyn
     meta: {},
   }
   const connection = await transporter.connect(options, null, null, emit)
+  t.after(async () => {
+    await transporter.disconnect(connection)
+  })
   const firstActionResult = await transporter.send(pingAction, connection)
 
   // Disconnect the Redis client from the network
@@ -34,7 +37,7 @@ test('should be able to reconnect to Redis if the server has disconnected', asyn
   const network = networks.find(
     (network) => network.Name === 'integreat-transporter-redis_reconnect',
   )
-  t.truthy(network, 'Network not found')
+  assert.ok(network, 'Network not found')
   const networkId = network?.Id ?? 'N/A'
 
   await docker
@@ -58,10 +61,13 @@ test('should be able to reconnect to Redis if the server has disconnected', asyn
     connection,
     emit,
   )
+  t.after(async () => {
+    await transporter.disconnect(newConnection)
+  })
   const secondActionResult = await transporter.send(pingAction, newConnection)
 
-  t.is(firstActionResult.status, 'ok')
-  t.deepEqual(firstActionResult.data, 'PONG')
-  t.is(secondActionResult.status, 'ok')
-  t.deepEqual(secondActionResult.data, 'PONG')
+  assert.equal(firstActionResult.status, 'ok')
+  assert.deepEqual(firstActionResult.data, 'PONG')
+  assert.equal(secondActionResult.status, 'ok')
+  assert.deepEqual(secondActionResult.data, 'PONG')
 })

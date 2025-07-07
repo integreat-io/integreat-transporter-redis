@@ -1,4 +1,5 @@
-import test from 'ava'
+import test from 'node:test'
+import assert from 'node:assert/strict'
 import sinon from 'sinon'
 import type { Connection } from './types.js'
 
@@ -6,7 +7,7 @@ import disconnect from './disconnect.js'
 
 // Tests
 
-test('should call disconnect on redis client', async (t) => {
+test('should call disconnect on redis client', async () => {
   const redisClient = {
     disconnect: sinon.stub().resolves(),
   }
@@ -17,11 +18,11 @@ test('should call disconnect on redis client', async (t) => {
 
   await disconnect(connection)
 
-  t.is(redisClient.disconnect.callCount, 1)
-  t.is(connection.redisClient, null)
+  assert.equal(redisClient.disconnect.callCount, 1)
+  assert.equal(connection.redisClient, null)
 })
 
-test('should handle that redis client disconnect throws', async (t) => {
+test('should handle that redis client disconnect throws', async () => {
   const redisClient = {
     disconnect: sinon.stub().throws('Error'),
   }
@@ -32,16 +33,16 @@ test('should handle that redis client disconnect throws', async (t) => {
 
   await disconnect(connection)
 
-  t.is(redisClient.disconnect.callCount, 1)
-  t.is(connection.redisClient, null)
+  assert.equal(redisClient.disconnect.callCount, 1)
+  assert.equal(connection.redisClient, null)
 })
 
-test('should do nothing when no connection', async (t) => {
-  await t.notThrowsAsync(disconnect(null))
+test('should do nothing when no connection', async () => {
+  await assert.doesNotReject(disconnect(null))
 })
 
-test('should do nothing when no client', async (t) => {
+test('should do nothing when no client', async () => {
   const connection = { status: 'error', error: 'Fail', redisClient: null }
 
-  await t.notThrowsAsync(disconnect(connection))
+  await assert.doesNotReject(disconnect(connection))
 })

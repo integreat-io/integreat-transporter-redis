@@ -1,4 +1,5 @@
-import test from 'ava'
+import test from 'node:test'
+import assert from 'node:assert/strict'
 import sinon from 'sinon'
 import type { Connection } from '../types.js'
 
@@ -18,7 +19,7 @@ const wrapInConnection = (redisClient: unknown) =>
 
 // Tests -- GET
 
-test('should GET from redis', async (t) => {
+test('should GET from redis', async () => {
   const redisData = [
     {
       title: 'Entry 1',
@@ -63,12 +64,12 @@ test('should GET from redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hGetAll.callCount, 1)
-  t.deepEqual(redisClient.hGetAll.args[0][0], 'meta:ent1')
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hGetAll.callCount, 1)
+  assert.deepEqual(redisClient.hGetAll.args[0][0], 'meta:ent1')
 })
 
-test('should GET several ids from redis', async (t) => {
+test('should GET several ids from redis', async () => {
   const redisData0 = [{ title: 'Entry 1' }]
   const redisData1 = [{ title: 'Entry 2' }]
   const redisClient = {
@@ -93,17 +94,17 @@ test('should GET several ids from redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.hGetAll.callCount, 2)
-  t.deepEqual(redisClient.hGetAll.args[0][0], 'meta:entries')
-  t.deepEqual(redisClient.hGetAll.args[1][0], 'meta:users')
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.hGetAll.callCount, 2)
+  assert.deepEqual(redisClient.hGetAll.args[0][0], 'meta:entries')
+  assert.deepEqual(redisClient.hGetAll.args[1][0], 'meta:users')
   const data = ret.data as { title: string }[]
-  t.is(data.length, 2)
-  t.is(data[0].title, 'Entry 1')
-  t.is(data[1].title, 'Entry 2')
+  assert.equal(data.length, 2)
+  assert.equal(data[0].title, 'Entry 1')
+  assert.equal(data[1].title, 'Entry 2')
 })
 
-test('should GET from redis with numeric id', async (t) => {
+test('should GET from redis with numeric id', async () => {
   const redisData = [
     {
       title: 'Entry 1',
@@ -137,12 +138,12 @@ test('should GET from redis with numeric id', async (t) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ret = await send(action as any, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hGetAll.callCount, 1)
-  t.deepEqual(redisClient.hGetAll.args[0][0], 'meta:12345')
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hGetAll.callCount, 1)
+  assert.deepEqual(redisClient.hGetAll.args[0][0], 'meta:12345')
 })
 
-test('should GET collection from redis', async (t) => {
+test('should GET collection from redis', async () => {
   const redisData0 = [{ title: 'Entry 1' }]
   const redisData1 = [{ title: 'Entry 2' }]
   const redisClient = {
@@ -168,21 +169,21 @@ test('should GET collection from redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.keys.callCount, 1)
-  t.is(redisClient.keys.args[0][0], 'meta:*')
-  t.is(redisClient.hGetAll.callCount, 2)
-  t.is(redisClient.hGetAll.args[0][0], 'meta:entries')
-  t.is(redisClient.hGetAll.args[1][0], 'meta:users')
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.keys.callCount, 1)
+  assert.equal(redisClient.keys.args[0][0], 'meta:*')
+  assert.equal(redisClient.hGetAll.callCount, 2)
+  assert.equal(redisClient.hGetAll.args[0][0], 'meta:entries')
+  assert.equal(redisClient.hGetAll.args[1][0], 'meta:users')
   const data = ret.data as { id: string; title: string }[]
-  t.is(data.length, 2)
-  t.is(data[0].id, 'entries')
-  t.is(data[0].title, 'Entry 1')
-  t.is(data[1].id, 'users')
-  t.is(data[1].title, 'Entry 2')
+  assert.equal(data.length, 2)
+  assert.equal(data[0].id, 'entries')
+  assert.equal(data[0].title, 'Entry 1')
+  assert.equal(data[1].id, 'users')
+  assert.equal(data[1].title, 'Entry 2')
 })
 
-test('should GET collection from redis with keys sorted alphabetically', async (t) => {
+test('should GET collection from redis with keys sorted alphabetically', async () => {
   const redisClient = {
     hGetAll: sinon
       .stub()
@@ -206,15 +207,15 @@ test('should GET collection from redis with keys sorted alphabetically', async (
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.keys.callCount, 1)
-  t.is(redisClient.hGetAll.callCount, 2)
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.keys.callCount, 1)
+  assert.equal(redisClient.hGetAll.callCount, 2)
   const data = ret.data as { id: string; title: string }[]
-  t.is(data[0].id, 'entries')
-  t.is(data[1].id, 'users')
+  assert.equal(data[0].id, 'entries')
+  assert.equal(data[1].id, 'users')
 })
 
-test('should GET collection from redis with prefix as wildcard', async (t) => {
+test('should GET collection from redis with prefix as wildcard', async () => {
   const redisData0 = [{ title: 'Entry 1' }]
   const redisData1 = [{ title: 'Entry 2' }]
   const redisClient = {
@@ -240,21 +241,21 @@ test('should GET collection from redis with prefix as wildcard', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.keys.callCount, 1)
-  t.is(redisClient.keys.args[0][0], 'store:meta:*')
-  t.is(redisClient.hGetAll.callCount, 2)
-  t.is(redisClient.hGetAll.args[0][0], 'store:meta:entries')
-  t.is(redisClient.hGetAll.args[1][0], 'store:meta:users')
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.keys.callCount, 1)
+  assert.equal(redisClient.keys.args[0][0], 'store:meta:*')
+  assert.equal(redisClient.hGetAll.callCount, 2)
+  assert.equal(redisClient.hGetAll.args[0][0], 'store:meta:entries')
+  assert.equal(redisClient.hGetAll.args[1][0], 'store:meta:users')
   const data = ret.data as { id: string; title: string }[]
-  t.is(data.length, 2)
-  t.is(data[0].id, 'entries')
-  t.is(data[0].title, 'Entry 1')
-  t.is(data[1].id, 'users')
-  t.is(data[1].title, 'Entry 2')
+  assert.equal(data.length, 2)
+  assert.equal(data[0].id, 'entries')
+  assert.equal(data[0].title, 'Entry 1')
+  assert.equal(data[1].id, 'users')
+  assert.equal(data[1].title, 'Entry 2')
 })
 
-test('should GET collection from redis with provided pattern', async (t) => {
+test('should GET collection from redis with provided pattern', async () => {
   const redisData0 = [{ title: 'Entry 1' }]
   const redisData1 = [{ title: 'Entry 2' }]
   const redisClient = {
@@ -282,21 +283,21 @@ test('should GET collection from redis with provided pattern', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.keys.callCount, 1)
-  t.is(redisClient.keys.args[0][0], 'store:meta:entry:*')
-  t.is(redisClient.hGetAll.callCount, 2)
-  t.is(redisClient.hGetAll.args[0][0], 'store:meta:entry:ent1')
-  t.is(redisClient.hGetAll.args[1][0], 'store:meta:entry:ent2')
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.keys.callCount, 1)
+  assert.equal(redisClient.keys.args[0][0], 'store:meta:entry:*')
+  assert.equal(redisClient.hGetAll.callCount, 2)
+  assert.equal(redisClient.hGetAll.args[0][0], 'store:meta:entry:ent1')
+  assert.equal(redisClient.hGetAll.args[1][0], 'store:meta:entry:ent2')
   const data = ret.data as { id: string; title: string }[]
-  t.is(data.length, 2)
-  t.is(data[0].id, 'entry:ent1')
-  t.is(data[0].title, 'Entry 1')
-  t.is(data[1].id, 'entry:ent2')
-  t.is(data[1].title, 'Entry 2')
+  assert.equal(data.length, 2)
+  assert.equal(data[0].id, 'entry:ent1')
+  assert.equal(data[0].title, 'Entry 1')
+  assert.equal(data[1].id, 'entry:ent2')
+  assert.equal(data[1].title, 'Entry 2')
 })
 
-test('should GET collection with only ids from redis with provided pattern', async (t) => {
+test('should GET collection with only ids from redis with provided pattern', async () => {
   const redisClient = {
     hGetAll: sinon.stub().resolves([]),
     keys: sinon
@@ -317,17 +318,17 @@ test('should GET collection with only ids from redis with provided pattern', asy
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.keys.callCount, 1)
-  t.is(redisClient.keys.args[0][0], 'store:meta:entry:*')
-  t.is(redisClient.hGetAll.callCount, 0)
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.keys.callCount, 1)
+  assert.equal(redisClient.keys.args[0][0], 'store:meta:entry:*')
+  assert.equal(redisClient.hGetAll.callCount, 0)
   const data = ret.data as { id: string; title: string }[]
-  t.is(data.length, 2)
-  t.deepEqual(data[0], { id: 'entry:ent1' })
-  t.deepEqual(data[1], { id: 'entry:ent2' })
+  assert.equal(data.length, 2)
+  assert.deepEqual(data[0], { id: 'entry:ent1' })
+  assert.deepEqual(data[1], { id: 'entry:ent2' })
 })
 
-test('should return empty error when GET collection yields no ids from redis', async (t) => {
+test('should return empty error when GET collection yields no ids from redis', async () => {
   const redisClient = {
     hGetAll: sinon.stub().resolves(null),
     keys: sinon.stub().resolves([]),
@@ -345,14 +346,14 @@ test('should return empty error when GET collection yields no ids from redis', a
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.keys.callCount, 1)
-  t.is(redisClient.keys.args[0][0], 'meta:*')
-  t.is(redisClient.hGetAll.callCount, 0)
-  t.deepEqual(ret.data, [])
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.keys.callCount, 1)
+  assert.equal(redisClient.keys.args[0][0], 'meta:*')
+  assert.equal(redisClient.hGetAll.callCount, 0)
+  assert.deepEqual(ret.data, [])
 })
 
-test('should prepend prefix to redis hash', async (t) => {
+test('should prepend prefix to redis hash', async () => {
   const redisData = {
     title: 'Entry 1',
     description: 'The first entry',
@@ -376,10 +377,10 @@ test('should prepend prefix to redis hash', async (t) => {
 
   await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(redisClient.hGetAll.args[0][0], 'store:meta:entries')
+  assert.deepEqual(redisClient.hGetAll.args[0][0], 'store:meta:entries')
 })
 
-test('should prepend only prefix to redis hash when useTypeAsPrefix is false', async (t) => {
+test('should prepend only prefix to redis hash when useTypeAsPrefix is false', async () => {
   const redisData = {
     title: 'Entry 1',
     description: 'The first entry',
@@ -404,10 +405,10 @@ test('should prepend only prefix to redis hash when useTypeAsPrefix is false', a
 
   await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(redisClient.hGetAll.args[0][0], 'store:entries')
+  assert.deepEqual(redisClient.hGetAll.args[0][0], 'store:entries')
 })
 
-test('should return not found for GET on empty data', async (t) => {
+test('should return not found for GET on empty data', async () => {
   const redisData = {}
   const redisClient = {
     hGetAll: sinon.stub().resolves(redisData),
@@ -431,10 +432,10 @@ test('should return not found for GET on empty data', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })
 
-test('should return undefined for ids that return no data from redis', async (t) => {
+test('should return undefined for ids that return no data from redis', async () => {
   const redisData1 = [{ title: 'Entry 2' }]
   const redisClient = {
     hGetAll: sinon
@@ -458,15 +459,15 @@ test('should return undefined for ids that return no data from redis', async (t)
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.hGetAll.callCount, 2)
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.hGetAll.callCount, 2)
   const data = ret.data as ({ title: string } | undefined)[]
-  t.is(data.length, 2)
-  t.is(data[0], undefined)
-  t.is(data[1]?.title, 'Entry 2')
+  assert.equal(data.length, 2)
+  assert.equal(data[0], undefined)
+  assert.equal(data[1]?.title, 'Entry 2')
 })
 
-test('should return notfound when no ids return data from redis', async (t) => {
+test('should return notfound when no ids return data from redis', async () => {
   const redisClient = {
     hGetAll: sinon.stub().resolves(null),
   }
@@ -488,14 +489,13 @@ test('should return notfound when no ids return data from redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hGetAll.callCount, 2)
-  t.is(ret.data, undefined)
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hGetAll.callCount, 2)
 })
 
 // Tests -- SET
 
-test('should SET to redis', async (t) => {
+test('should SET to redis', async () => {
   const redisClient = {
     hSet: sinon.stub().resolves('OK'),
   }
@@ -545,13 +545,13 @@ test('should SET to redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hSet.callCount, 1)
-  t.deepEqual(redisClient.hSet.args[0][0], 'store:meta:ent1')
-  t.deepEqual(redisClient.hSet.args[0][1], expectedArgs)
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hSet.callCount, 1)
+  assert.deepEqual(redisClient.hSet.args[0][0], 'store:meta:ent1')
+  assert.deepEqual(redisClient.hSet.args[0][1], expectedArgs)
 })
 
-test('should return badrequest for SET with no id', async (t) => {
+test('should return badrequest for SET with no id', async () => {
   const redisClient = {
     hSet: sinon.stub().resolves('OK'),
   }
@@ -574,11 +574,11 @@ test('should return badrequest for SET with no id', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'badrequest')
-  t.is(redisClient.hSet.callCount, 0)
+  assert.equal(ret.status, 'badrequest')
+  assert.equal(redisClient.hSet.callCount, 0)
 })
 
-test('should SET several items to redis', async (t) => {
+test('should SET several items to redis', async () => {
   const redisClient = {
     hSet: sinon.stub().resolves('OK'),
   }
@@ -616,15 +616,15 @@ test('should SET several items to redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hSet.callCount, 2)
-  t.deepEqual(redisClient.hSet.args[0][0], 'store:meta:ent1')
-  t.deepEqual(redisClient.hSet.args[0][1], expectedArgs1)
-  t.deepEqual(redisClient.hSet.args[1][0], 'store:meta:ent2')
-  t.deepEqual(redisClient.hSet.args[1][1], expectedArgs2)
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hSet.callCount, 2)
+  assert.deepEqual(redisClient.hSet.args[0][0], 'store:meta:ent1')
+  assert.deepEqual(redisClient.hSet.args[0][1], expectedArgs1)
+  assert.deepEqual(redisClient.hSet.args[1][0], 'store:meta:ent2')
+  assert.deepEqual(redisClient.hSet.args[1][1], expectedArgs2)
 })
 
-test('should SET to redis with id from params', async (t) => {
+test('should SET to redis with id from params', async () => {
   const redisClient = {
     hSet: sinon.stub().resolves('OK'),
   }
@@ -653,13 +653,13 @@ test('should SET to redis with id from params', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hSet.callCount, 1)
-  t.deepEqual(redisClient.hSet.args[0][0], 'store:meta:ent1')
-  t.deepEqual(redisClient.hSet.args[0][1], expectedArgs)
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hSet.callCount, 1)
+  assert.deepEqual(redisClient.hSet.args[0][0], 'store:meta:ent1')
+  assert.deepEqual(redisClient.hSet.args[0][1], expectedArgs)
 })
 
-test('should SET with type from data when set', async (t) => {
+test('should SET with type from data when set', async () => {
   const redisClient = {
     hSet: sinon.stub().resolves('OK'),
   }
@@ -694,12 +694,12 @@ test('should SET with type from data when set', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hSet.callCount, 1)
-  t.deepEqual(redisClient.hSet.args[0][0], 'store:meta:ent1')
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hSet.callCount, 1)
+  assert.deepEqual(redisClient.hSet.args[0][0], 'store:meta:ent1')
 })
 
-test('should SET without type in prefix when useTypeAsPrefix is false', async (t) => {
+test('should SET without type in prefix when useTypeAsPrefix is false', async () => {
   const redisClient = {
     hSet: sinon.stub().resolves('OK'),
   }
@@ -734,12 +734,12 @@ test('should SET without type in prefix when useTypeAsPrefix is false', async (t
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hSet.callCount, 1)
-  t.deepEqual(redisClient.hSet.args[0][0], 'store:ent1')
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hSet.callCount, 1)
+  assert.deepEqual(redisClient.hSet.args[0][0], 'store:ent1')
 })
 
-test('should SET respond with noaction when no data', async (t) => {
+test('should SET respond with noaction when no data', async () => {
   const redisClient = {
     hSet: sinon.stub().resolves('OK'),
   }
@@ -763,13 +763,13 @@ test('should SET respond with noaction when no data', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hSet.callCount, 0)
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hSet.callCount, 0)
 })
 
 // Tests -- delete
 
-test('should DELETE several data items from redis', async (t) => {
+test('should DELETE several data items from redis', async () => {
   const redisClient = {
     del: sinon.stub().resolves(2),
   }
@@ -800,15 +800,15 @@ test('should DELETE several data items from redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.del.callCount, 1)
-  t.deepEqual(redisClient.del.args[0][0], [
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.del.callCount, 1)
+  assert.deepEqual(redisClient.del.args[0][0], [
     'store:meta:ent1',
     'store:meta:ent2',
   ])
 })
 
-test('should DELETE one data item from redis', async (t) => {
+test('should DELETE one data item from redis', async () => {
   const redisClient = {
     del: sinon.stub().resolves(2),
   }
@@ -832,12 +832,12 @@ test('should DELETE one data item from redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.del.callCount, 1)
-  t.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.del.callCount, 1)
+  assert.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
 })
 
-test('should DELETE several ids from redis', async (t) => {
+test('should DELETE several ids from redis', async () => {
   const redisClient = {
     del: sinon.stub().resolves(2),
   }
@@ -857,15 +857,15 @@ test('should DELETE several ids from redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.del.callCount, 1)
-  t.deepEqual(redisClient.del.args[0][0], [
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.del.callCount, 1)
+  assert.deepEqual(redisClient.del.args[0][0], [
     'store:meta:ent1',
     'store:meta:ent2',
   ])
 })
 
-test('should DELETE one id from redis', async (t) => {
+test('should DELETE one id from redis', async () => {
   const redisClient = {
     del: sinon.stub().resolves(2),
   }
@@ -885,12 +885,12 @@ test('should DELETE one id from redis', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.del.callCount, 1)
-  t.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.del.callCount, 1)
+  assert.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
 })
 
-test('should DELETE with id from redis when data has no id', async (t) => {
+test('should DELETE with id from redis when data has no id', async () => {
   const redisClient = {
     del: sinon.stub().resolves(2),
   }
@@ -911,12 +911,12 @@ test('should DELETE with id from redis when data has no id', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'ok', ret.error)
-  t.is(redisClient.del.callCount, 1)
-  t.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
+  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(redisClient.del.callCount, 1)
+  assert.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
 })
 
-test('should do nothing when DELETE has no ids', async (t) => {
+test('should do nothing when DELETE has no ids', async () => {
   const redisClient = {
     del: sinon.stub().resolves(2),
   }
@@ -935,13 +935,13 @@ test('should do nothing when DELETE has no ids', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'noaction', ret.error)
-  t.is(redisClient.del.callCount, 0)
+  assert.equal(ret.status, 'noaction', ret.error)
+  assert.equal(redisClient.del.callCount, 0)
 })
 
 // Tests -- error handling
 
-test('should return error when redis throws on GET', async (t) => {
+test('should return error when redis throws on GET', async () => {
   const redisClient = {
     hGetAll: sinon.stub().rejects(new Error('Horror!')),
   }
@@ -964,10 +964,10 @@ test('should return error when redis throws on GET', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })
 
-test('should return error when redis throws on one of more GETs', async (t) => {
+test('should return error when redis throws on one of more GETs', async () => {
   const redisClient = {
     hGetAll: sinon.stub().resolves([]).onCall(0).rejects(new Error('Horror!')),
   }
@@ -991,10 +991,10 @@ test('should return error when redis throws on one of more GETs', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })
 
-test('should return error when getting ids from redis fails', async (t) => {
+test('should return error when getting ids from redis fails', async () => {
   const redisClient = {
     hGetAll: sinon.stub().resolves(null),
     keys: sinon.stub().rejects(new Error('Oh no!')),
@@ -1012,14 +1012,14 @@ test('should return error when getting ids from redis fails', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.is(ret.status, 'error', ret.error)
-  t.is(ret.error, 'Could not get collection from Redis. Error: Oh no!')
-  t.is(ret.data, undefined)
-  t.is(redisClient.keys.callCount, 1)
-  t.is(redisClient.hGetAll.callCount, 0)
+  assert.equal(ret.status, 'error', ret.error)
+  assert.equal(ret.error, 'Could not get collection from Redis. Error: Oh no!')
+  assert.equal(ret.data, undefined)
+  assert.equal(redisClient.keys.callCount, 1)
+  assert.equal(redisClient.hGetAll.callCount, 0)
 })
 
-test('should respond with badrequest when array of ids on SET', async (t) => {
+test('should respond with badrequest when array of ids on SET', async () => {
   const redisClient = {
     hGetAll: sinon.stub().resolves(null),
   }
@@ -1041,11 +1041,11 @@ test('should respond with badrequest when array of ids on SET', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
-  t.is(redisClient.hGetAll.callCount, 0)
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.hGetAll.callCount, 0)
 })
 
-test('should return error when redis throws on SET', async (t) => {
+test('should return error when redis throws on SET', async () => {
   const redisClient = {
     hSet: sinon.stub().rejects(new Error('Horror!')),
   }
@@ -1078,10 +1078,10 @@ test('should return error when redis throws on SET', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })
 
-test('should return error when redis throws on one of more SETs', async (t) => {
+test('should return error when redis throws on one of more SETs', async () => {
   const redisClient = {
     hSet: sinon
       .stub()
@@ -1118,10 +1118,10 @@ test('should return error when redis throws on one of more SETs', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })
 
-test('should return error when no connection', async (t) => {
+test('should return error when no connection', async () => {
   const action = {
     type: 'GET',
     payload: {
@@ -1141,10 +1141,10 @@ test('should return error when no connection', async (t) => {
 
   const ret = await send(action, null)
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })
 
-test('should return error when no client', async (t) => {
+test('should return error when no client', async () => {
   const action = {
     type: 'GET',
     payload: {
@@ -1165,10 +1165,10 @@ test('should return error when no client', async (t) => {
 
   const ret = await send(action, connection)
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })
 
-test('should return error when no options', async (t) => {
+test('should return error when no options', async () => {
   const action = {
     type: 'GET',
     payload: {
@@ -1185,10 +1185,10 @@ test('should return error when no options', async (t) => {
 
   const ret = await send(action, connection)
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })
 
-test('should return badrequest when unknown action', async (t) => {
+test('should return badrequest when unknown action', async () => {
   const redisClient = {
     hGetAll: sinon.stub().resolves(null),
   }
@@ -1209,5 +1209,5 @@ test('should return badrequest when unknown action', async (t) => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  t.deepEqual(ret, expected)
+  assert.deepEqual(ret, expected)
 })

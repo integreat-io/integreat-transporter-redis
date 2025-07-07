@@ -1,8 +1,6 @@
 import type { createClient } from '@redis/client'
 
-export interface GenerateId {
-  (id: string, type?: string): string
-}
+export type GenerateId = (id: string, type?: string) => string
 
 export interface RedisOptions {
   uri?: string
@@ -34,5 +32,6 @@ export interface Connection extends Record<string, unknown> {
   error?: string
   expire?: null | number
   redisClient?: ReturnType<typeof createClient> | null
+  redisSubscriber?: ReturnType<typeof createClient> | null
   incoming?: IncomingOptions
 }
