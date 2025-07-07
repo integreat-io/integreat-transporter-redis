@@ -38,19 +38,19 @@
     "node": ">= 18"
   },
   "dependencies": {
-    "@redis/client": "^1.6.0",
-    "debug": "^4.4.0",
+    "@redis/client": "^1.6.1",
+    "debug": "^4.4.1",
     "map-any": "^1.0.0",
     "p-limit": "^6.2.0"
   },
   "devDependencies": {
     "@integreat/ts-dev-setup": "^5.0.4",
     "@types/debug": "^4.1.12",
-    "@types/dockerode": "^3.3.34",
-    "@types/sinon": "^17.0.3",
-    "dockerode": "^4.0.4",
-    "integreat": "^1.5.12",
-    "sinon": "^19.0.2",
-    "wait-on": "^8.0.2"
+    "@types/dockerode": "^3.3.42",
+    "@types/sinon": "^17.0.4",
+    "dockerode": "^4.0.7",
+    "integreat": "^1.6.3",
+    "sinon": "^19.0.5",
+    "wait-on": "^8.0.3"
   }
 }

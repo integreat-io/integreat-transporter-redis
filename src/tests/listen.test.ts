@@ -55,7 +55,12 @@ test('should listen and receive item with id on update', async (t) => {
   }
 
   const connection = await transporter.connect(options, null, null, emit)
-  const ret = await transporter.listen!(dispatch, connection, authenticate)
+  const ret = await transporter.listen!(
+    dispatch,
+    connection,
+    authenticate,
+    emit,
+  )
   await redisClient.hSet('store:user:user1', redisData)
   await scheduler.wait(500) // Wait to make sure the change is made before we disconnect
   await transporter.disconnect(connection)
