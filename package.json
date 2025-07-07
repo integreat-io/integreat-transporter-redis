@@ -12,19 +12,20 @@
     }
   },
   "scripts": {
-    "test": "npm run build && c8 --reporter=text-summary ava --config ./ava-dist.config.cjs",
+    "test": "node --import tsx --test --enable-source-maps --experimental-test-coverage --test-reporter node-test-reporter 'src/**/*.test.ts'",
+    "test:watch": "npm run dev",
     "pretest": "docker compose up --detach && wait-on --log --timeout 30000 tcp:localhost:6379",
     "posttest": "docker compose down",
-    "test:setup": "docker compose up",
-    "test:teardown": "docker compose down",
-    "test:watch": "npm run dev",
-    "dev": "ava --watch || exit 0",
+    "dev:setup": "docker compose up",
+    "dev:teardown": "docker compose down",
     "predev": "npm run pretest",
     "postdev": "npm run posttest",
+    "dev": "node --import tsx --test --enable-source-maps --test-reporter node-test-reporter --watch 'src/**/*.test.ts' || exit 0",
     "build": "tsc",
-    "coverage": "c8 report",
-    "lint": "eslint --ext .ts src",
-    "verify": "npm run lint && npm run build && npm test"
+    "lint": "eslint src",
+    "format": "prettier src/**/*.ts",
+    "check-types": "tsc --noEmit --strict",
+    "verify": "npm run lint && npm run check-types && npm test"
   },
   "repository": {
     "type": "git",
@@ -44,13 +45,13 @@
     "p-limit": "^6.2.0"
   },
   "devDependencies": {
-    "@integreat/ts-dev-setup": "^5.0.4",
+    "@integreat/ts-dev-setup": "^8.2.0",
     "@types/debug": "^4.1.12",
     "@types/dockerode": "^3.3.42",
     "@types/sinon": "^17.0.4",
     "dockerode": "^4.0.7",
     "integreat": "^1.6.3",
-    "sinon": "^19.0.5",
+    "sinon": "^21.0.0",
     "wait-on": "^8.0.3"
   }
 }
