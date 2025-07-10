@@ -767,6 +767,199 @@ test('should SET respond with noaction when no data', async () => {
   assert.equal(redisClient.hSet.callCount, 0)
 })
 
+// Tests -- SET -- pub/sub
+
+test('should SET to Redis pub/sub channel', async () => {
+  const redisClient = {
+    hSet: sinon.stub().resolves('OK'),
+    publish: sinon.stub().resolves(1),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      data: 'The message',
+      method: 'pubsub',
+      channel: 'msg',
+    },
+    meta: {
+      options: {
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'ok',
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.publish.callCount, 1)
+  assert.deepEqual(redisClient.publish.args[0][0], 'msg')
+  assert.deepEqual(redisClient.publish.args[0][1], 'The message')
+  assert.equal(redisClient.hSet.callCount, 0)
+})
+
+test('should SET to Redis pub/sub channel with prefix', async () => {
+  const redisClient = {
+    hSet: sinon.stub().resolves('OK'),
+    publish: sinon.stub().resolves(1),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      data: 'The message',
+      method: 'pubsub',
+      channel: 'msg',
+    },
+    meta: {
+      options: {
+        prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'ok',
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.publish.callCount, 1)
+  assert.deepEqual(redisClient.publish.args[0][0], 'store:msg')
+  assert.deepEqual(redisClient.publish.args[0][1], 'The message')
+  assert.equal(redisClient.hSet.callCount, 0)
+})
+
+test('should force data to string when sending to pub/sub', async () => {
+  const redisClient = {
+    hSet: sinon.stub().resolves('OK'),
+    publish: sinon.stub().resolves(1),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      data: 52,
+      method: 'pubsub',
+      channel: 'msg',
+    },
+    meta: {
+      options: {
+        // prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'ok',
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.publish.callCount, 1)
+  assert.deepEqual(redisClient.publish.args[0][0], 'msg')
+  assert.deepEqual(redisClient.publish.args[0][1], '52')
+  assert.equal(redisClient.hSet.callCount, 0)
+})
+
+test('should return badrequest when channel is missing', async () => {
+  const redisClient = {
+    hSet: sinon.stub().resolves('OK'),
+    publish: sinon.stub().resolves(1),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      // No data
+      method: 'pubsub',
+      channel: 'msg',
+    },
+    meta: {
+      options: {
+        // prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'badrequest',
+    error: 'Specify `data` to send as a message',
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.publish.callCount, 0)
+  assert.equal(redisClient.hSet.callCount, 0)
+})
+
+test('should return badrequest when channel is missing', async () => {
+  const redisClient = {
+    hSet: sinon.stub().resolves('OK'),
+    publish: sinon.stub().resolves(1),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      data: 'The message',
+      method: 'pubsub',
+      // No channel
+    },
+    meta: {
+      options: {
+        // prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'badrequest',
+    error: 'Specify a `channel` to send a message',
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.publish.callCount, 0)
+  assert.equal(redisClient.hSet.callCount, 0)
+})
+
+test('should return error from Redis when publishing to pub/sub', async () => {
+  const redisClient = {
+    hSet: sinon.stub().resolves('OK'),
+    publish: sinon.stub().rejects(new Error('Redis is unhappy')),
+  }
+  const action = {
+    type: 'SET',
+    payload: {
+      data: 'The message',
+      method: 'pubsub',
+      channel: 'msg',
+    },
+    meta: {
+      options: {
+        // prefix: 'store',
+        redis: redisOptions,
+      },
+    },
+  }
+  const expected = {
+    status: 'error',
+    error:
+      "Error from Redis while publishing to channel 'msg'. Redis is unhappy",
+  }
+
+  const ret = await send(action, wrapInConnection(redisClient))
+
+  assert.deepEqual(ret, expected)
+  assert.equal(redisClient.publish.callCount, 1)
+  assert.deepEqual(redisClient.publish.args[0][0], 'msg')
+  assert.deepEqual(redisClient.publish.args[0][1], 'The message')
+  assert.equal(redisClient.hSet.callCount, 0)
+})
+
 // Tests -- delete
 
 test('should DELETE several data items from redis', async () => {
