@@ -132,15 +132,50 @@ const response = await great.dispatch({
 
 `response.data` will hold the response data from Redis.
 
+#### Sending and listening to pub/sub messages
+
+Redis supports posting messages to a pub/sub channel. To post a message you
+dispatch a `SET` action with method `'pubsub'`, the channel as `channel`, and
+the message as `data`. `data` will be forced to a string, so it's usually best
+to provide it as a string to have control over how it is stringified.
+
+To listen to messages on a channnel, you configure a listen endpoint on a
+service with the desired channel. Set `channel` in the `incoming` object on
+`options` on the service. When the Integreat instance is set up, call `listen()`
+on the instance, and Integreat will dispatch a `SET` action for each message
+comming on the queue. The payload of the action will have `'pubsub'` as
+`method`, the channel as `channel`, and the message as `data`.
+
+In other words, the `SET` action dispatch to send a message to the channel, is
+exactly like the `SET` action you receive when you listen to a channel, so it
+will be like you're dispatching the action to your listeners.
+
+If you set a `prefix` on the service options, the channel you provide will be
+prefixed with it, separated by a colon (`:`).
+
+Note that you set both `channel` and `prefix` on the service, not on the
+endpoints, and for now an incoming message action will match any endpoint, so
+you should have only one endpoint for a listening service to avoid unexpected
+behavior if we open up for having more specific endpoints in the future.
+
+Also, we only allow one incoming `channel` per service, and any `keyPattern`
+will be disregarded when `channel` is set. This may also change in the future.
+
+The Redis pub/sub has an _at-most-once_ policy, meaning that you will never get
+duplicate messages, but that you _may_ loose a message. See the [Redis pub/sub docs](https://redis.io/docs/latest/develop/pubsub/)
+for more details.
+
 #### Listening to changes
 
 The Redis transporter supports listening to changes in the database. To enable
-this, set the `keyPattern` in the `incoming` object on `options`. When the
-Integreat instance is set up, call `listen()` on the instance, and Integreat
+this, set the `keyPattern` in the `incoming` object on service `options`. When
+the Integreat instance is set up, call `listen()` on the instance, and Integreat
 will dispatch `SET` action to changes to keys matching the pattern.
 
 If a `prefix` is set on the service `options`, the `keyPattern` will be prefixed
-with it.
+with it, separated by a colon (`:`).
+
+We only listen for `hset` changes for now.
 
 Note that we only listen to one `keyPattern` per service right now, and we
 disregard any `keyPattern` or `prefix` set on endpoint `options`. The dispatched
@@ -149,11 +184,14 @@ In the future we may allow different patterns and prefixes for different
 endpoints and direct the dispatched action to the correct endpoint, so only
 specify this on the service to make sure you are future compatible.
 
-Also note that we only listen for `hset` changes for now.
+Also, you may not listen to both `channel` and `keyPattern` on the same service,
+and `channel` will be preferred.
 
 If the Redis database is not configured to send notifications, it will be
-enabled automatically. The `notify-keyspace-events` `'Eh'` are required, and
-will be added when `listen()` is run.
+enabled automatically. The `notify-keyspace-events` letters `'E'` (keyevent
+events) and `'h'` (hash commands) will be added when `listen()` is run. See the
+[Redis keyspace notification docs](https://redis.io/docs/latest/develop/pubsub/keyspace-notifications/)
+for more.
 
 ### Debugging
 

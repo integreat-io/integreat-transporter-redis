@@ -112,13 +112,24 @@ export default async function listen(
     }
   }
 
-  await updateConfigIfNeeded(connection.redisClient)
+  if (connection.incoming?.keyPattern) {
+    // Update Redis config on db server if needed, when we're searching for a pattern
+    await updateConfigIfNeeded(connection.redisClient)
+  } else if (!connection.incoming?.channel) {
+    return {
+      status: 'noaction',
+      warning: 'No `channel` or `keyPattern` to listen to',
+    }
+  }
 
   const subscriber = connection.redisClient.duplicate()
   const keyPattern = connection.incoming?.keyPattern || '' // Default keyPattern to empty string
   const [keyPrefix, isPattern] = extractKeyPrefix(keyPattern)
   const isSubscribedKey = createKeyMatcher(keyPrefix, keyPattern, isPattern)
   connection.redisSubscriber = subscriber
+
+  // Use incoming channel or listen for hset events
+  const channel = connection.incoming?.channel || '__keyevent@0__:hset'
 
   const listener = createListener(
     dispatch,
@@ -128,7 +139,7 @@ export default async function listen(
   )
   try {
     await subscriber.connect()
-    await subscriber.subscribe('__keyevent@0__:hset', listener)
+    await subscriber.subscribe(channel, listener)
   } catch (error) {
     return {
       status: 'error',
