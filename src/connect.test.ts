@@ -264,3 +264,32 @@ test('should include prefix from service options in incoming channel', async () 
   assert.equal(ret?.status, 'ok')
   assert.deepEqual(ret?.incoming, expectedIncoming)
 })
+
+test('should set incoming options with several channels', async () => {
+  const createClient = sinon.stub().returns(client)
+  const options = {
+    redis: { uri: 'redis://localhost:6379' },
+    incoming: { channel: ['msg1', 'msg2'] },
+  }
+  const expectedIncoming = { channel: ['msg1', 'msg2'] }
+
+  const ret = await connect(createClient)(options, null, null)
+
+  assert.equal(ret?.status, 'ok')
+  assert.deepEqual(ret?.incoming, expectedIncoming)
+})
+
+test('should include prefix from service options in incoming channels', async () => {
+  const createClient = sinon.stub().returns(client)
+  const options = {
+    redis: { uri: 'redis://localhost:6379' },
+    incoming: { channel: ['msg1', 'msg2'] },
+    prefix: 'store',
+  }
+  const expectedIncoming = { channel: ['store:msg1', 'store:msg2'] }
+
+  const ret = await connect(createClient)(options, null, null)
+
+  assert.equal(ret?.status, 'ok')
+  assert.deepEqual(ret?.incoming, expectedIncoming)
+})

@@ -544,6 +544,35 @@ test('should dispatch SET action with channel', async () => {
   assert.deepEqual(dispatch.args[0][0], expectedAction)
 })
 
+test('should subscribe to several channels', async () => {
+  const dispatch = sinon
+    .stub()
+    .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
+  const connectStub = sinon.stub().resolves()
+  const subscribeStub = sinon.stub().resolves()
+  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const duplicateStub = sinon.stub().returns(subscriber)
+  const redisClient = {
+    duplicate: duplicateStub,
+    configGet,
+    configSet,
+  } as unknown as ReturnType<typeof createClient>
+  const connection = {
+    status: 'ok',
+    redisClient: redisClient,
+    incoming: {
+      channel: ['msg1', 'msg2'],
+    },
+  }
+
+  const ret = await listen(dispatch, connection, authenticate)
+
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(subscribeStub.callCount, 2)
+  assert.equal(subscribeStub.args[0][0], 'msg1')
+  assert.equal(subscribeStub.args[1][0], 'msg2')
+})
+
 test('should dispatch auth error', async () => {
   const authenticate = async () => ({
     status: 'noaccess',

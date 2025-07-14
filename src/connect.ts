@@ -17,7 +17,11 @@ const prepareIncoming = (
   prefix?: string,
 ) =>
   channel
-    ? { channel: combineHashParts(prefix, channel) }
+    ? {
+        channel: Array.isArray(channel)
+          ? channel.map((c) => combineHashParts(prefix, c))
+          : combineHashParts(prefix, channel),
+      }
     : { keyPattern: combineHashParts(prefix, keyPattern) }
 
 const wrapInOk = (

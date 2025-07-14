@@ -66,15 +66,15 @@ function createListener(
   dispatch: Dispatch,
   authenticate: AuthenticateExternal,
   keyPattern?: string,
-  channel?: string,
+  channels?: string[],
 ) {
   const [keyPrefix, isPattern] = extractKeyPrefix(keyPattern ?? '')
 
   return async (message: string, incomingChannel: string) => {
     if (message && incomingChannel) {
       let action
-      if (channel) {
-        if (channel === incomingChannel) {
+      if (channels) {
+        if (channels.includes(incomingChannel)) {
           action = {
             type: 'SET',
             payload: {
@@ -135,18 +135,25 @@ export default async function listen(
   const subscriber = connection.redisClient.duplicate()
   connection.redisSubscriber = subscriber
 
-  // Use incoming channel or listen for hset events
-  const channel = connection.incoming?.channel || '__keyevent@0__:hset'
+  // Use incoming channel(s) or listen for hset events
+  const incomingChannels = Array.isArray(connection.incoming?.channel)
+    ? connection.incoming.channel // Keep array
+    : connection.incoming?.channel
+      ? [connection.incoming.channel] // Wrap single channel in array
+      : undefined
+  const channels = incomingChannels ?? ['__keyevent@0__:hset'] // Use keyevent if incoming channel is not set
 
   const listener = createListener(
     dispatch,
     authenticate,
     connection.incoming?.keyPattern,
-    connection.incoming?.channel,
+    incomingChannels,
   )
   try {
     await subscriber.connect()
-    await subscriber.subscribe(channel, listener)
+    for (const channel of channels) {
+      await subscriber.subscribe(channel, listener)
+    }
   } catch (error) {
     return {
       status: 'error',
