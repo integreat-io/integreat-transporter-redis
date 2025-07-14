@@ -5,7 +5,7 @@ Transporter that lets
 database.
 
 [![npm Version](https://img.shields.io/npm/v/integreat-transporter-redis.svg)](https://www.npmjs.com/package/integreat-transporter-redis)
-[![Maintainability](https://qlty.sh/gh/integreat-io/projects/integreat-adapter-redis/maintainability.svg)](https://qlty.sh/gh/integreat-io/projects/integreat-adapter-redis)
+[![Maintainability](https://qlty.sh/gh/integreat-io/projects/integreat-transporter-redis/maintainability.svg)](https://qlty.sh/gh/integreat-io/projects/integreat-transporter-redis)
 
 ## Getting started
 
