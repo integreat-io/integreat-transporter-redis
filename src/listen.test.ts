@@ -15,7 +15,7 @@ const authenticate = async () => ({
 const configGet = async () => ({ 'notify-keyspace-events': 'Eh' })
 const configSet = async () => 'OK'
 
-// Tests -- listen
+// Tests -- listen -- keyPattern
 
 test('should create a stand-alone client, subscribe to hset events, and return ok', async () => {
   const dispatch = sinon
@@ -37,9 +37,7 @@ test('should create a stand-alone client, subscribe to hset events, and return o
   const connection = {
     status: 'ok',
     redisClient: redisClient,
-    incoming: {
-      keyPattern: 'store:user:*',
-    },
+    incoming: { keyPattern: 'store:user:*' },
   }
   const expected = { status: 'ok' }
 
@@ -56,7 +54,7 @@ test('should create a stand-alone client, subscribe to hset events, and return o
   assert.equal(dispatch.callCount, 0) // No dispatching without requests
 })
 
-test('should respond with error when client', async () => {
+test('should respond with error when no client', async () => {
   const dispatch = sinon
     .stub()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
@@ -141,6 +139,79 @@ test('should respond with error when subscription fails', async () => {
   assert.equal(connectStub.callCount, 1)
   assert.equal(subscribeStub.callCount, 1)
   assert.equal(dispatch.callCount, 0)
+})
+
+// Tests -- listen -- channel
+
+test('should create a stand-alone client, subscribe to hset events, and return ok', async () => {
+  const dispatch = sinon
+    .stub()
+    .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
+  const connectStub = sinon.stub().resolves()
+  const subscribeStub = sinon.stub().resolves()
+  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const duplicateStub = sinon.stub().returns(subscriber)
+  const configGetStub = sinon.stub().resolves({})
+  const configSetStub = sinon.stub().resolves('OK')
+  const redisClient = {
+    duplicate: duplicateStub,
+    configGet: configGetStub,
+    configSet: configSetStub,
+  } as unknown as ReturnType<typeof createClient>
+  const connection = {
+    status: 'ok',
+    redisClient: redisClient,
+    incoming: { channel: 'msg' },
+  }
+  const expected = { status: 'ok' }
+
+  const ret = await listen(dispatch, connection, authenticate)
+
+  assert.deepEqual(ret, expected)
+  assert.equal(configGetStub.callCount, 0)
+  assert.equal(configSetStub.callCount, 0) // No need to set config for channel
+  assert.equal(duplicateStub.callCount, 1)
+  assert.equal(connectStub.callCount, 1)
+  assert.equal(subscribeStub.callCount, 1)
+  assert.equal(subscribeStub.args[0][0], 'msg')
+  assert.equal(typeof subscribeStub.args[0][1], 'function') // Listener
+  assert.equal(dispatch.callCount, 0) // No dispatching without requests
+})
+
+test('should return noaction when no channel or keyPattern', async () => {
+  const dispatch = sinon
+    .stub()
+    .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
+  const connectStub = sinon.stub().resolves()
+  const subscribeStub = sinon.stub().resolves()
+  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const duplicateStub = sinon.stub().returns(subscriber)
+  const configGetStub = sinon.stub().resolves({})
+  const configSetStub = sinon.stub().resolves('OK')
+  const redisClient = {
+    duplicate: duplicateStub,
+    configGet: configGetStub,
+    configSet: configSetStub,
+  } as unknown as ReturnType<typeof createClient>
+  const connection = {
+    status: 'ok',
+    redisClient: redisClient,
+    incoming: {},
+  }
+  const expected = {
+    status: 'noaction',
+    warning: 'No `channel` or `keyPattern` to listen to',
+  }
+
+  const ret = await listen(dispatch, connection, authenticate)
+
+  assert.deepEqual(ret, expected)
+  assert.equal(configGetStub.callCount, 0)
+  assert.equal(configSetStub.callCount, 0) // No need to set config for channel
+  assert.equal(duplicateStub.callCount, 0)
+  assert.equal(connectStub.callCount, 0)
+  assert.equal(subscribeStub.callCount, 0)
+  assert.equal(dispatch.callCount, 0) // No dispatching without requests
 })
 
 // Tests -- config
@@ -428,6 +499,44 @@ test('should match everything with wildcard only pattern', async () => {
   assert.equal(typeof listener, 'function')
   if (typeof listener === 'function') {
     await listener('store:user:user22', '__keyevent@0__:hset')
+  }
+
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(dispatch.callCount, 1)
+  assert.deepEqual(dispatch.args[0][0], expectedAction)
+})
+
+test('should dispatch SET action with channel', async () => {
+  const dispatch = sinon
+    .stub()
+    .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
+  const connectStub = sinon.stub().resolves()
+  const subscribeStub = sinon.stub().resolves()
+  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const duplicateStub = sinon.stub().returns(subscriber)
+  const redisClient = {
+    duplicate: duplicateStub,
+    configGet,
+    configSet,
+  } as unknown as ReturnType<typeof createClient>
+  const connection = {
+    status: 'ok',
+    redisClient: redisClient,
+    incoming: {
+      channel: 'msg',
+    },
+  }
+  const expectedAction = {
+    type: 'SET',
+    payload: { method: 'pubsub', channel: 'msg', data: '{"id":"ent1"}' },
+    meta: { ident: { id: 'userFromIntegreat' } }, // Ident comes from call to `authenticate()`
+  }
+
+  const ret = await listen(dispatch, connection, authenticate)
+  const listener = subscribeStub.args[0][1]
+  assert.equal(typeof listener, 'function')
+  if (typeof listener === 'function') {
+    await listener('{"id":"ent1"}', 'msg')
   }
 
   assert.deepEqual(ret, { status: 'ok' })

@@ -11,9 +11,14 @@ import type {
 
 const debug = debugFn('integreat:transporter:redis')
 
-const prepareIncoming = ({ keyPattern }: IncomingOptions, prefix?: string) => ({
-  keyPattern: combineHashParts(prefix, keyPattern),
-})
+// Set `channel` if present, otherwise set `keyPattern`
+const prepareIncoming = (
+  { keyPattern, channel }: IncomingOptions,
+  prefix?: string,
+) =>
+  channel
+    ? { channel: combineHashParts(prefix, channel) }
+    : { keyPattern: combineHashParts(prefix, keyPattern) }
 
 const wrapInOk = (
   redisClient: ReturnType<typeof createClient>,
@@ -58,7 +63,7 @@ async function createConnection(
   debug(
     `Creating new Redis client with expire timeout ${options.connectionTimeout}.`,
   )
-  const client = createRedis(authObj) // TS: We tested this before calling this fn
+  const client = createRedis(authObj)
   let connection: Connection | null = null
 
   // We need to set the error handler before calling `connect()`, or else `redis` will not reconnect on disconnects
@@ -90,7 +95,7 @@ export default function connect(createRedis = createClient) {
     }
 
     // Connect to redis (create a new redis client)
-    if (options?.redis && options) {
+    if (options?.redis) {
       const redisOptions = prepareRedisOptions(options.redis, auth)
       return await createConnection(createRedis, redisOptions, options)
     } else {

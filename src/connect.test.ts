@@ -207,7 +207,7 @@ test('should return error when no redis options', async () => {
   assert.equal(createClient.callCount, 0)
 })
 
-test('should set incoming options', async () => {
+test('should set incoming options with keyPattern', async () => {
   const createClient = sinon.stub().returns(client)
   const options = {
     redis: { uri: 'redis://localhost:6379' },
@@ -229,6 +229,35 @@ test('should include prefix from service options in incoming keyPattern', async 
     prefix: 'store',
   }
   const expectedIncoming = { keyPattern: 'store:user:*' }
+
+  const ret = await connect(createClient)(options, null, null)
+
+  assert.equal(ret?.status, 'ok')
+  assert.deepEqual(ret?.incoming, expectedIncoming)
+})
+
+test('should set incoming options with channel', async () => {
+  const createClient = sinon.stub().returns(client)
+  const options = {
+    redis: { uri: 'redis://localhost:6379' },
+    incoming: { channel: 'msg' },
+  }
+  const expectedIncoming = { channel: 'msg' }
+
+  const ret = await connect(createClient)(options, null, null)
+
+  assert.equal(ret?.status, 'ok')
+  assert.deepEqual(ret?.incoming, expectedIncoming)
+})
+
+test('should include prefix from service options in incoming channel', async () => {
+  const createClient = sinon.stub().returns(client)
+  const options = {
+    redis: { uri: 'redis://localhost:6379' },
+    incoming: { channel: 'msg' },
+    prefix: 'store',
+  }
+  const expectedIncoming = { channel: 'store:msg' }
 
   const ret = await connect(createClient)(options, null, null)
 

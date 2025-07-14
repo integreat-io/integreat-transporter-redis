@@ -37,20 +37,6 @@ function extractKeyPrefix(keyPattern: string): [string, boolean] {
   return [keyPrefix, isPattern]
 }
 
-function createKeyMatcher(
-  keyPrefix: string,
-  keyPattern?: string,
-  isPattern = false,
-) {
-  if (!keyPattern) {
-    return () => true
-  } else if (isPattern) {
-    return (key: string) => key.startsWith(keyPrefix)
-  } else {
-    return (key: string) => key === keyPattern
-  }
-}
-
 const extractKeyspaceEvents = (
   config: Record<string, string>,
 ): string | undefined => config['notify-keyspace-events']
@@ -76,29 +62,53 @@ async function updateConfigIfNeeded(client: ReturnType<typeof createClient>) {
   }
 }
 
-const createListener =
-  (
-    dispatch: Dispatch,
-    authenticate: AuthenticateExternal,
-    isSubscribedKey: (key: string) => boolean,
-    keyPrefix: string,
-  ) =>
-  async (key: string, event: string) => {
-    if (isSubscribedKey(key)) {
-      const authentication = { status: 'granted' }
-      const action = {
-        type: 'SET',
-        payload: {
-          id: removePrefix(key, keyPrefix),
-          method: removePrefix(event, '__keyevent@0__:'),
-          key,
-        },
-        meta: {},
+function createListener(
+  dispatch: Dispatch,
+  authenticate: AuthenticateExternal,
+  keyPattern?: string,
+  channel?: string,
+) {
+  const [keyPrefix, isPattern] = extractKeyPrefix(keyPattern ?? '')
+
+  return async (message: string, incomingChannel: string) => {
+    if (message && incomingChannel) {
+      let action
+      if (channel) {
+        if (channel === incomingChannel) {
+          action = {
+            type: 'SET',
+            payload: {
+              method: 'pubsub',
+              channel: incomingChannel,
+              data: message, // When listening on a channel, the message holds the published data
+            },
+            meta: {},
+          }
+        }
+      } else if (keyPattern) {
+        if (
+          isPattern ? message.startsWith(keyPrefix) : message === keyPattern
+        ) {
+          action = {
+            type: 'SET',
+            payload: {
+              id: removePrefix(message, keyPrefix), // Get the id from the message by removing the prefix
+              method: removePrefix(incomingChannel, '__keyevent@0__:'),
+              key: message, // When listening to changes, the message holds the key that was changed
+            },
+            meta: {},
+          }
+        }
       }
-      const authenticateResponse = await authenticate(authentication, action)
-      await dispatch(setIdentOrErrorOnAction(action, authenticateResponse))
+
+      if (action) {
+        const authentication = { status: 'granted' }
+        const authenticateResponse = await authenticate(authentication, action)
+        await dispatch(setIdentOrErrorOnAction(action, authenticateResponse))
+      }
     }
   }
+}
 
 export default async function listen(
   dispatch: Dispatch,
@@ -112,23 +122,31 @@ export default async function listen(
     }
   }
 
-  await updateConfigIfNeeded(connection.redisClient)
+  if (connection.incoming?.keyPattern) {
+    // Update Redis config on db server if needed, when we're searching for a pattern
+    await updateConfigIfNeeded(connection.redisClient)
+  } else if (!connection.incoming?.channel) {
+    return {
+      status: 'noaction',
+      warning: 'No `channel` or `keyPattern` to listen to',
+    }
+  }
 
   const subscriber = connection.redisClient.duplicate()
-  const keyPattern = connection.incoming?.keyPattern || '' // Default keyPattern to empty string
-  const [keyPrefix, isPattern] = extractKeyPrefix(keyPattern)
-  const isSubscribedKey = createKeyMatcher(keyPrefix, keyPattern, isPattern)
   connection.redisSubscriber = subscriber
+
+  // Use incoming channel or listen for hset events
+  const channel = connection.incoming?.channel || '__keyevent@0__:hset'
 
   const listener = createListener(
     dispatch,
     authenticate,
-    isSubscribedKey,
-    keyPrefix,
+    connection.incoming?.keyPattern,
+    connection.incoming?.channel,
   )
   try {
     await subscriber.connect()
-    await subscriber.subscribe('__keyevent@0__:hset', listener)
+    await subscriber.subscribe(channel, listener)
   } catch (error) {
     return {
       status: 'error',

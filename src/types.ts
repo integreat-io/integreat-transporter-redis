@@ -16,6 +16,7 @@ export interface RedisOptions {
 
 export interface IncomingOptions {
   keyPattern?: string
+  channel?: string
 }
 
 export interface Options extends Record<string, unknown> {

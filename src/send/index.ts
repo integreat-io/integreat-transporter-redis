@@ -2,6 +2,7 @@ import mapAny from 'map-any'
 import sendGet from './get.js'
 import sendSet from './set.js'
 import sendDel from './delete.js'
+import publish from './publish.js'
 import { generateId } from '../utils/ids.js'
 import type { Action, Response } from 'integreat'
 import type { Connection } from '../types.js'
@@ -40,6 +41,18 @@ export default async function send(
       error: "No redis client given to redis transporter's send method",
     }
   }
+  const client = connection.redisClient
+
+  // When a `SET` action has method `'pubsub'`, it's a publish action
+  if (action.type === 'SET' && action.payload.method === 'pubsub') {
+    return await publish(
+      client,
+      action.payload.channel,
+      action.meta?.options?.prefix,
+      action.payload.data,
+    )
+  }
+
   const {
     data,
     id,
@@ -50,16 +63,22 @@ export default async function send(
     concurrency,
     useTypeAsPrefix,
   } = parseAction(action)
-  const client = connection.redisClient
   const generateIdFn = generateId(prefix, type, useTypeAsPrefix)
 
   switch (action.type) {
     case 'GET':
-      return sendGet(client, generateIdFn, id, pattern, onlyIds, concurrency)
+      return await sendGet(
+        client,
+        generateIdFn,
+        id,
+        pattern,
+        onlyIds,
+        concurrency,
+      )
     case 'SET':
-      return sendSet(client, generateIdFn, id, data, concurrency)
+      return await sendSet(client, generateIdFn, id, data, concurrency)
     case 'DELETE':
-      return sendDel(client, generateIdFn, id, data)
+      return await sendDel(client, generateIdFn, id, data)
     case 'SERVICE':
       if (action.payload.type === 'ping') {
         return await client.ping().then((data) => ({ status: 'ok', data }))
