@@ -18,7 +18,8 @@ const transporter: Transporter = {
   listen,
 
   // Require a `keyPattern` to start listening
-  shouldListen: (options: Options) => !!options.incoming?.keyPattern,
+  shouldListen: (options: Options) =>
+    !!(options.incoming?.keyPattern || options.incoming?.channel),
 
   disconnect,
 }

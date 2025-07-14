@@ -43,6 +43,19 @@ test('should return true when incoming keyPattern is set in options', () => {
   assert.ok(ret)
 })
 
+test('should return true when incoming channel is set in options', () => {
+  const options = {
+    prefix: 'store',
+    incoming: {
+      channel: 'msg',
+    },
+  }
+
+  const ret = transporter.shouldListen!(options)
+
+  assert.ok(ret)
+})
+
 test('should return false when no incoming keyPattern is not set in options', () => {
   const options = {
     uri: 'http://foreign.api',
