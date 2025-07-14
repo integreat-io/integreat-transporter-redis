@@ -506,6 +506,44 @@ test('should match everything with wildcard only pattern', async () => {
   assert.deepEqual(dispatch.args[0][0], expectedAction)
 })
 
+test('should dispatch SET action with channel', async () => {
+  const dispatch = sinon
+    .stub()
+    .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
+  const connectStub = sinon.stub().resolves()
+  const subscribeStub = sinon.stub().resolves()
+  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const duplicateStub = sinon.stub().returns(subscriber)
+  const redisClient = {
+    duplicate: duplicateStub,
+    configGet,
+    configSet,
+  } as unknown as ReturnType<typeof createClient>
+  const connection = {
+    status: 'ok',
+    redisClient: redisClient,
+    incoming: {
+      channel: 'msg',
+    },
+  }
+  const expectedAction = {
+    type: 'SET',
+    payload: { method: 'pubsub', channel: 'msg', data: '{"id":"ent1"}' },
+    meta: { ident: { id: 'userFromIntegreat' } }, // Ident comes from call to `authenticate()`
+  }
+
+  const ret = await listen(dispatch, connection, authenticate)
+  const listener = subscribeStub.args[0][1]
+  assert.equal(typeof listener, 'function')
+  if (typeof listener === 'function') {
+    await listener('{"id":"ent1"}', 'msg')
+  }
+
+  assert.deepEqual(ret, { status: 'ok' })
+  assert.equal(dispatch.callCount, 1)
+  assert.deepEqual(dispatch.args[0][0], expectedAction)
+})
+
 test('should dispatch auth error', async () => {
   const authenticate = async () => ({
     status: 'noaccess',
