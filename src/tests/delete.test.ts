@@ -60,7 +60,7 @@ test('delete', async (t) => {
     const ret = await transporter.send(action, client)
     await transporter.disconnect(client)
 
-    assert.equal(ret.status, 'ok', ret.error)
+    assert.equal(ret.status, 'ok')
     assert.equal(ret.data, null)
     const keysCount = await redisClient.exists([
       'store:meta:ent2',

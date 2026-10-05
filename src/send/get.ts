@@ -61,7 +61,7 @@ async function getCollection(
   onlyIds: boolean,
   pattern?: string,
 ) {
-  let ids: string[] = []
+  let ids: string[]
   try {
     ids = await getIds(client, generateId, pattern)
   } catch (error) {

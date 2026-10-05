@@ -57,7 +57,7 @@ test('listen', async (t) => {
     await scheduler.wait(500) // Wait to make sure the change is made before we disconnect
     await transporter.disconnect(connection)
 
-    assert.equal(ret.status, 'ok', ret.error)
+    assert.equal(ret.status, 'ok')
     assert.equal(dispatch.callCount, 1)
     assert.deepEqual(dispatch.args[0][0], expectedAction)
   })

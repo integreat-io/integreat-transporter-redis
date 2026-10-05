@@ -68,15 +68,13 @@ async function createConnection(
     `Creating new Redis client with expire timeout ${options.connectionTimeout}.`,
   )
   const client = createRedis(authObj)
-  let connection: Connection | null = null
-
   // We need to set the error handler before calling `connect()`, or else `redis` will not reconnect on disconnects
   client.on('error', (err) => {
     debug(`Redis error: ${err}`)
   })
 
   await client.connect()
-  connection = wrapInOk(client, options)
+  const connection = wrapInOk(client, options)
   return connection
 }
 

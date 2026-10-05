@@ -94,7 +94,7 @@ test('should GET several ids from redis', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.hGetAll.callCount, 2)
   assert.deepEqual(redisClient.hGetAll.args[0][0], 'meta:entries')
   assert.deepEqual(redisClient.hGetAll.args[1][0], 'meta:users')
@@ -169,7 +169,7 @@ test('should GET collection from redis', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.keys.callCount, 1)
   assert.equal(redisClient.keys.args[0][0], 'meta:*')
   assert.equal(redisClient.hGetAll.callCount, 2)
@@ -207,7 +207,7 @@ test('should GET collection from redis with keys sorted alphabetically', async (
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.keys.callCount, 1)
   assert.equal(redisClient.hGetAll.callCount, 2)
   const data = ret.data as { id: string; title: string }[]
@@ -241,7 +241,7 @@ test('should GET collection from redis with prefix as wildcard', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.keys.callCount, 1)
   assert.equal(redisClient.keys.args[0][0], 'store:meta:*')
   assert.equal(redisClient.hGetAll.callCount, 2)
@@ -283,7 +283,7 @@ test('should GET collection from redis with provided pattern', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.keys.callCount, 1)
   assert.equal(redisClient.keys.args[0][0], 'store:meta:entry:*')
   assert.equal(redisClient.hGetAll.callCount, 2)
@@ -318,7 +318,7 @@ test('should GET collection with only ids from redis with provided pattern', asy
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.keys.callCount, 1)
   assert.equal(redisClient.keys.args[0][0], 'store:meta:entry:*')
   assert.equal(redisClient.hGetAll.callCount, 0)
@@ -346,7 +346,7 @@ test('should return empty error when GET collection yields no ids from redis', a
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.keys.callCount, 1)
   assert.equal(redisClient.keys.args[0][0], 'meta:*')
   assert.equal(redisClient.hGetAll.callCount, 0)
@@ -459,7 +459,7 @@ test('should return undefined for ids that return no data from redis', async () 
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.hGetAll.callCount, 2)
   const data = ret.data as ({ title: string } | undefined)[]
   assert.equal(data.length, 2)
@@ -993,7 +993,7 @@ test('should DELETE several data items from redis', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.del.callCount, 1)
   assert.deepEqual(redisClient.del.args[0][0], [
     'store:meta:ent1',
@@ -1025,7 +1025,7 @@ test('should DELETE one data item from redis', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.del.callCount, 1)
   assert.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
 })
@@ -1050,7 +1050,7 @@ test('should DELETE several ids from redis', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.del.callCount, 1)
   assert.deepEqual(redisClient.del.args[0][0], [
     'store:meta:ent1',
@@ -1078,7 +1078,7 @@ test('should DELETE one id from redis', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.del.callCount, 1)
   assert.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
 })
@@ -1104,7 +1104,7 @@ test('should DELETE with id from redis when data has no id', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'ok', ret.error)
+  assert.equal(ret.status, 'ok')
   assert.equal(redisClient.del.callCount, 1)
   assert.deepEqual(redisClient.del.args[0][0], ['store:meta:ent1'])
 })
@@ -1128,7 +1128,7 @@ test('should do nothing when DELETE has no ids', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'noaction', ret.error)
+  assert.equal(ret.status, 'noaction')
   assert.equal(redisClient.del.callCount, 0)
 })
 
@@ -1205,7 +1205,7 @@ test('should return error when getting ids from redis fails', async () => {
 
   const ret = await send(action, wrapInConnection(redisClient))
 
-  assert.equal(ret.status, 'error', ret.error)
+  assert.equal(ret.status, 'error')
   assert.equal(ret.error, 'Could not get collection from Redis. Error: Oh no!')
   assert.equal(ret.data, undefined)
   assert.equal(redisClient.keys.callCount, 1)
