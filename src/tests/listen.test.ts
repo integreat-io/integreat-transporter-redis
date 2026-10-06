@@ -61,4 +61,48 @@ test('listen', async (t) => {
     assert.equal(dispatch.callCount, 1)
     assert.deepEqual(dispatch.args[0][0], expectedAction)
   })
+
+  await t.test(
+    'should keep listening after the subscriber connection is killed',
+    async () => {
+      const dispatch = sinon.stub().resolves({ status: 'ok' })
+      const options = {
+        prefix: 'store',
+        redis: {
+          uri: 'redis://localhost:6379',
+        },
+        incoming: {
+          channel: 'killed',
+        },
+      }
+      const expectedAction = {
+        type: 'SET',
+        payload: {
+          method: 'pubsub',
+          channel: 'store:killed',
+          data: 'Still here',
+        },
+        meta: { ident: { id: 'userFromIntegreat' } },
+      }
+
+      const connection = await transporter.connect(options, null, null, emit)
+      const ret = await transporter.listen!(
+        dispatch,
+        connection,
+        authenticate,
+        emit,
+      )
+      // Close the subscriber's socket from the server side. This makes the
+      // subscriber emit a `SocketClosedUnexpectedlyError`
+      await redisClient.sendCommand(['CLIENT', 'KILL', 'TYPE', 'pubsub'])
+      await scheduler.wait(500) // Wait for the subscriber to reconnect and resubscribe
+      await redisClient.publish('store:killed', 'Still here')
+      await scheduler.wait(500) // Wait to make sure the message is received before we disconnect
+      await transporter.disconnect(connection)
+
+      assert.equal(ret.status, 'ok')
+      assert.equal(dispatch.callCount, 1)
+      assert.deepEqual(dispatch.args[0][0], expectedAction)
+    },
+  )
 })

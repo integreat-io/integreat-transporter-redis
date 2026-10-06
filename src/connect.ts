@@ -2,6 +2,7 @@ import debugFn from 'debug'
 import { createClient } from '@redis/client'
 import disconnect from './disconnect.js'
 import { combineHashParts } from './utils/ids.js'
+import { logRedisError } from './utils/error.js'
 import type {
   Options,
   IncomingOptions,
@@ -69,9 +70,7 @@ async function createConnection(
   )
   const client = createRedis(authObj)
   // We need to set the error handler before calling `connect()`, or else `redis` will not reconnect on disconnects
-  client.on('error', (err) => {
-    debug(`Redis error: ${err}`)
-  })
+  client.on('error', logRedisError(debug, 'Redis error'))
 
   await client.connect()
   const connection = wrapInOk(client, options)

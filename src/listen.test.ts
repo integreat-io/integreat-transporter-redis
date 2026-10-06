@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import sinon from 'sinon'
+import { EventEmitter } from 'node:events'
 import type { createClient } from '@redis/client'
 
 import listen from './listen.js'
@@ -23,7 +24,11 @@ test('should create a stand-alone client, subscribe to hset events, and return o
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const configGetStub = sinon
     .stub()
@@ -54,6 +59,60 @@ test('should create a stand-alone client, subscribe to hset events, and return o
   assert.equal(dispatch.callCount, 0) // No dispatching without requests
 })
 
+test('should set error handler on subscriber before connecting', async () => {
+  const dispatch = sinon.stub().resolves({ status: 'ok' })
+  const connectStub = sinon.stub().resolves()
+  const onStub = sinon.stub()
+  const subscriber = {
+    connect: connectStub,
+    subscribe: sinon.stub().resolves(),
+    on: onStub,
+  }
+  const redisClient = {
+    duplicate: sinon.stub().returns(subscriber),
+    configGet,
+    configSet,
+  } as unknown as ReturnType<typeof createClient>
+  const connection = {
+    status: 'ok',
+    redisClient: redisClient,
+    incoming: { channel: 'msg' },
+  }
+
+  const ret = await listen(dispatch, connection, authenticate)
+
+  assert.equal(ret.status, 'ok')
+  assert.equal(onStub.callCount, 1)
+  assert.equal(onStub.args[0][0], 'error')
+  assert.equal(typeof onStub.args[0][1], 'function')
+  assert.ok(onStub.calledBefore(connectStub))
+})
+
+test('should not throw when subscriber emits an error', async () => {
+  const dispatch = sinon.stub().resolves({ status: 'ok' })
+  const subscriber = Object.assign(new EventEmitter(), {
+    connect: sinon.stub().resolves(),
+    subscribe: sinon.stub().resolves(),
+  })
+  const redisClient = {
+    duplicate: sinon.stub().returns(subscriber),
+    configGet,
+    configSet,
+  } as unknown as ReturnType<typeof createClient>
+  const connection = {
+    status: 'ok',
+    redisClient: redisClient,
+    incoming: { channel: 'msg' },
+  }
+
+  const ret = await listen(dispatch, connection, authenticate)
+
+  assert.equal(ret.status, 'ok')
+  assert.doesNotThrow(() =>
+    subscriber.emit('error', new Error('Socket closed unexpectedly')),
+  )
+})
+
 test('should respond with error when no client', async () => {
   const dispatch = sinon
     .stub()
@@ -79,7 +138,11 @@ test('should respond with error when connection fails', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().rejects(new Error('Connection failed'))
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -113,7 +176,11 @@ test('should respond with error when subscription fails', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().rejects(new Error('Subscription failed'))
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -149,7 +216,11 @@ test('should create a stand-alone client, subscribe to hset events, and return o
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const configGetStub = sinon.stub().resolves({})
   const configSetStub = sinon.stub().resolves('OK')
@@ -184,7 +255,11 @@ test('should return noaction when no channel or keyPattern', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const configGetStub = sinon.stub().resolves({})
   const configSetStub = sinon.stub().resolves('OK')
@@ -222,7 +297,11 @@ test('should enable required keyspace notification in Redis if needed', async ()
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const configGetStub = sinon.stub().resolves({ 'notify-keyspace-events': '' })
   const configSetStub = sinon.stub().resolves('OK')
@@ -256,7 +335,11 @@ test('should keep other keyspace notification letters', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const configGetStub = sinon
     .stub()
@@ -292,7 +375,11 @@ test('should update when only one letter is missing', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const configGetStub = sinon
     .stub()
@@ -330,7 +417,11 @@ test('should dispatch SET action when key matching pattern is updated with hset'
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -368,7 +459,11 @@ test('should not dispatch when key is not matching pattern', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -400,7 +495,11 @@ test('should match key with non-wildcard pattern', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -438,7 +537,11 @@ test('should not match key that start with pattern when non-wildcard pattern', a
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -470,7 +573,11 @@ test('should match everything with wildcard only pattern', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -512,7 +619,11 @@ test('should dispatch SET action with channel', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -550,7 +661,11 @@ test('should subscribe to several channels', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,
@@ -584,7 +699,11 @@ test('should dispatch auth error', async () => {
     .resolves({ status: 'ok', data: JSON.stringify([{ id: 'ent1' }]) })
   const connectStub = sinon.stub().resolves()
   const subscribeStub = sinon.stub().resolves()
-  const subscriber = { connect: connectStub, subscribe: subscribeStub }
+  const subscriber = {
+    connect: connectStub,
+    subscribe: subscribeStub,
+    on: sinon.stub(),
+  }
   const duplicateStub = sinon.stub().returns(subscriber)
   const redisClient = {
     duplicate: duplicateStub,

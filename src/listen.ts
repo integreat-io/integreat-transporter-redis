@@ -1,3 +1,4 @@
+import debugFn from 'debug'
 import type {
   Dispatch,
   Action,
@@ -5,7 +6,10 @@ import type {
   AuthenticateExternal,
 } from 'integreat'
 import type { createClient } from '@redis/client'
+import { logRedisError } from './utils/error.js'
 import type { Connection } from './types.js'
+
+const debug = debugFn('integreat:transporter:redis')
 
 const extractError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
@@ -132,7 +136,9 @@ export default async function listen(
     }
   }
 
+  // Set up a duplicate Redis client for the subscriber
   const subscriber = connection.redisClient.duplicate()
+  subscriber.on('error', logRedisError(debug, 'Redis subscriber error'))
   connection.redisSubscriber = subscriber
 
   // Use incoming channel(s) or listen for hset events
